@@ -8,11 +8,11 @@ A standalone Matrix bot that automatically detects and translates foreign-langua
 
 ```bash
 # 1. Clone
-git clone https://github.com/youruser/languagebridge.git
-cd languagebridge
+git clone https://github.com/moiiiiit/matrix-language-bridge.git
+cd matrix-language-bridge
 
-# 2. Copy the example config
-cp config/config.example.yaml config/config.yaml
+# 2. Create config/config.yaml from template
+make setup
 
 # 3. Edit config/config.yaml — fill in your Matrix credentials and LLM API key
 #    (see sections below for how to get these)
@@ -22,6 +22,53 @@ make docker-up
 ```
 
 That's it. The bot joins your rooms and starts translating.
+
+## Run Commands
+
+```bash
+# Local run (Poetry)
+make install
+make run
+
+# Local run using config/config-local.yaml (gitignored)
+make run-local
+
+# Docker run
+make docker-build
+make docker-up
+make docker-logs
+```
+
+Stop commands:
+- Local: `Ctrl-C`
+- Docker: `make docker-down`
+
+### Generate config from parameters (cloud-friendly)
+
+You can generate `config/config.yaml` entirely from environment variables:
+
+```bash
+LB_FAMILY_NAME="Kulkarni Family" \
+LB_TARGET_LANGUAGE="en" \
+LB_DIALECT="Pune Marathi" \
+LB_PRESERVE_TERMS="kaka,mama,tai,aai,baba,dada,vahini,aji,ajoba" \
+LB_TRIGGER_MODE="auto" \
+LB_REACTION_TRIGGER="🌐" \
+LB_COMMAND_PREFIX="!translate" \
+LB_ROOMS="!roomA:matrix.org,!roomB:matrix.org" \
+LB_MATRIX_HOMESERVER_URL="https://matrix.org" \
+LB_MATRIX_ACCESS_TOKEN="syt_..." \
+LB_MATRIX_USER_ID="@languagebridge:matrix.org" \
+LB_LLM_PROVIDER="anthropic" \
+LB_LLM_API_KEY="sk-ant-..." \
+LB_LLM_MODEL="claude-haiku-4-5-20251001" \
+make config-from-env
+```
+
+Notes:
+- Use `LB_ROOMS="*"` to watch all joined rooms.
+- For Ollama, set `LB_LLM_PROVIDER="ollama"` and optionally `LB_LLM_OLLAMA_URL`.
+- You can also run `poetry run python -m languagebridge.config_gen --help` for flag-based usage.
 
 ## Getting a Matrix Access Token
 
@@ -183,11 +230,15 @@ make install
 
 # Run the bot locally
 make run
+
+# Same, but load config/config-local.yaml (override path: CONFIG_LOCAL=path make run-local)
+make run-local
 ```
 
 Useful commands:
 - `make shell` to open a Poetry shell
 - `make lock` to refresh `poetry.lock`
+- `make config-from-env` to write `config/config.yaml` from `LB_*` variables
 - `make docker-build`, `make docker-up`, `make docker-down`, `make docker-logs`
 
 ## How It Works

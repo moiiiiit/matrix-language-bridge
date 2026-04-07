@@ -9,6 +9,7 @@ venv/
 
 # Config with secrets
 config/config.yaml
+config/config-local.yaml
 
 # SQLite database
 data/*.db
