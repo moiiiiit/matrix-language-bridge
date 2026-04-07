@@ -5,6 +5,7 @@ import inspect
 import logging
 import os
 import sys
+from pathlib import Path
 
 from mautrix.client import Client as MatrixClient
 
@@ -21,7 +22,43 @@ logging.basicConfig(
 logger = logging.getLogger("languagebridge")
 
 
+class SingleInstanceLock:
+    """Prevent multiple bot processes from running concurrently."""
+
+    def __init__(self, lock_path: str | Path) -> None:
+        self._lock_path = Path(lock_path)
+        self._fd: int | None = None
+
+    def acquire(self) -> None:
+        import fcntl
+
+        self._lock_path.parent.mkdir(parents=True, exist_ok=True)
+        self._fd = os.open(self._lock_path, os.O_RDWR | os.O_CREAT, 0o644)
+        try:
+            fcntl.flock(self._fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            logger.error(
+                "Another LanguageBridge instance is already running "
+                "(lock: %s).",
+                self._lock_path,
+            )
+            raise SystemExit(1)
+
+    def release(self) -> None:
+        if self._fd is None:
+            return
+        import fcntl
+
+        fcntl.flock(self._fd, fcntl.LOCK_UN)
+        os.close(self._fd)
+        self._fd = None
+
+
 async def main() -> None:
+    lock_path = os.environ.get("LOCK_PATH", "data/languagebridge.lock")
+    process_lock = SingleInstanceLock(lock_path)
+    process_lock.acquire()
+
     # 1. Load config
     config_path = os.environ.get("CONFIG_PATH", "config/config.yaml")
     logger.info("Loading config from %s", config_path)
@@ -77,11 +114,14 @@ async def main() -> None:
     except KeyboardInterrupt:
         logger.info("Shutting down...")
     finally:
-        stop_result = client.stop()
-        if inspect.isawaitable(stop_result):
-            await stop_result
-        await storage.close()
-        logger.info("LanguageBridge stopped.")
+        try:
+            stop_result = client.stop()
+            if inspect.isawaitable(stop_result):
+                await stop_result
+            await storage.close()
+            logger.info("LanguageBridge stopped.")
+        finally:
+            process_lock.release()
 
 
 def run() -> None:

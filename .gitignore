@@ -13,6 +13,7 @@ config/config-local.yaml
 
 # SQLite database
 data/*.db
+data/*.lock
 
 # OS files
 .DS_Store
