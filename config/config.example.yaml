@@ -1,0 +1,62 @@
+# LanguageBridge — configuration
+# Copy to config/config.yaml and fill in your values.
+# All fields under matrix: are required. Everything else has sensible defaults.
+
+family:
+  # Display name used in startup messages and logs
+  name: "Kulkarni Family"
+
+  # Language to translate messages INTO (ISO 639-1 code)
+  target_language: "en"
+
+  # Optional: helps the LLM produce more natural output for regional dialects
+  dialect: "Pune Marathi"
+
+  # Family address terms and names that should never be translated.
+  # Add anything that sounds wrong when translated literally.
+  preserve_terms:
+    - kaka
+    - mama
+    - tai
+    - aai
+    - baba
+    - dada
+    - vahini
+    - aji
+    - ajoba
+
+  # auto     — translate every detected foreign message automatically
+  # reaction — only translate when someone reacts with reaction_trigger emoji
+  # command  — only translate when someone sends command_prefix in the room
+  trigger_mode: auto
+
+  reaction_trigger: "🌐"
+  command_prefix: "!translate"
+
+  # Matrix room IDs to monitor. Use ["*"] to watch all rooms the bot is in.
+  # To find a room ID: in Element open room settings → Advanced → Internal room ID
+  rooms:
+    - "!exampleRoomId:matrix.org"
+
+matrix:
+  homeserver_url: "https://matrix.org"
+  # Get your access token: Element → Settings → Help & About → Access Token
+  access_token: "syt_your_token_here"
+  user_id: "@languagebridge:matrix.org"
+
+llm:
+  # One of: anthropic, openai, gemini, ollama
+  provider: anthropic
+
+  # Your API key. Not needed for ollama.
+  api_key: "sk-ant-..."
+
+  # Optional model override. Defaults:
+  #   anthropic → claude-haiku-4-5-20251001
+  #   openai    → gpt-4o-mini
+  #   gemini    → gemini-2.0-flash
+  #   ollama    → llama3
+  # model: claude-haiku-4-5-20251001
+
+  # Only needed for ollama. Defaults to http://localhost:11434
+  # ollama_url: http://ollama:11434

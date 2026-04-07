@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Config with secrets
+config/config.yaml
+
+# SQLite database
+data/*.db
+
+# OS files
+.DS_Store
