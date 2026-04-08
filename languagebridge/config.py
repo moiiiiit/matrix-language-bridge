@@ -22,6 +22,7 @@ class FamilyConfig(BaseModel):
     name: str
     profile: str = "default"
     room_profiles: dict[str, str] = Field(default_factory=dict)
+    # Legacy fields kept for backward compatibility with old configs.
     dialect: str | None = None
     preserve_terms: list[str] = []
     trigger_mode: Literal["auto", "reaction", "command"] = "auto"
@@ -63,6 +64,8 @@ class TranslationProfile(BaseModel):
     reply_target_label: str
     bidirectional_with: str | None = None
     prompt_appendix: str = ""
+    dialect: str | None = None
+    preserve_terms: list[str] = Field(default_factory=list)
 
 
 class Config(BaseModel):
@@ -138,6 +141,16 @@ def load_config(path: str | Path) -> Config:
             sys.exit(1)
         loaded_profiles[profile_name] = raw_profile
         logger.debug("Loaded profile '%s' from %s", profile_name, profile_path)
+
+    # Back-compat: if legacy fields exist under family, apply them to profiles
+    # only when the profile doesn't define its own values.
+    family_dialect = family_raw.get("dialect")
+    family_terms = family_raw.get("preserve_terms")
+    for profile_data in loaded_profiles.values():
+        if family_dialect and not profile_data.get("dialect"):
+            profile_data["dialect"] = family_dialect
+        if family_terms and not profile_data.get("preserve_terms"):
+            profile_data["preserve_terms"] = family_terms
 
     raw["profiles"] = loaded_profiles
 

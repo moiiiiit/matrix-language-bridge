@@ -138,7 +138,8 @@ async def main() -> None:
             state_store=e2ee_stack.state_store if e2ee_stack else None,
             sync_store=e2ee_stack.crypto_store if e2ee_stack else None,
         )
-        client.parse_user_id(config.matrix.user_id)
+        # parse_user_id() only validates/splits; setting mxid ensures crypto upload payloads include user_id.
+        client.mxid = config.matrix.user_id
 
         # Verify connection
         try:

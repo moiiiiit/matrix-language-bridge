@@ -1,4 +1,6 @@
 id: default
 target_language: en
 reply_target_label: en
+dialect: "Pune Marathi"
+preserve_terms: [kaka, mama, tai, aai, baba, dada, vahini, aji, ajoba]
 prompt_appendix: ""

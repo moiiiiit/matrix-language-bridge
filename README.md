@@ -50,8 +50,6 @@ You can generate `config/config.yaml` entirely from environment variables:
 ```bash
 LB_FAMILY_NAME="Kulkarni Family" \
 LB_PROFILE="default" \
-LB_DIALECT="Pune Marathi" \
-LB_PRESERVE_TERMS="kaka,mama,tai,aai,baba,dada,vahini,aji,ajoba" \
 LB_TRIGGER_MODE="auto" \
 LB_REACTION_TRIGGER="🌐" \
 LB_COMMAND_PREFIX="!translate" \
@@ -173,8 +171,6 @@ You can also override by room with `family.room_profiles` (`room_id -> profile`)
 | `name`             | string     | *required*     | Family name, used in logs and LLM prompts                |
 | `profile`          | string     | `"default"`    | Translation profile name/path (e.g. `default`, `charje_english_runes`) |
 | `room_profiles`    | map        | `{}`           | Per-room profile overrides: `room_id -> profile`         |
-| `dialect`          | string     | `null`         | Regional dialect hint (e.g. `"Pune Marathi"`)            |
-| `preserve_terms`   | list[str]  | `[]`           | Words to never translate (e.g. `kaka`, `aai`, `baba`)    |
 | `trigger_mode`     | string     | `"auto"`       | `auto`, `reaction`, or `command`                         |
 | `reaction_trigger` | string     | `"🌐"`         | Emoji that triggers translation (reaction mode only)     |
 | `command_prefix`   | string     | `"!translate"` | Command prefix (command mode only)                       |
@@ -187,6 +183,16 @@ You can also override by room with `family.room_profiles` (`room_id -> profile`)
 | `homeserver_url`  | string | Your Matrix homeserver URL                       |
 | `access_token`    | string | Bot account access token                         |
 | `user_id`         | string | Bot's full MXID (e.g. `@languagebridge:matrix.org`) |
+
+### Profile fields (`languagebridge/profiles/*.yaml`)
+
+| Field             | Type      | Default | Description                                            |
+| ----------------- | --------- | ------- | ------------------------------------------------------ |
+| `target_language` | string    | required| Target language code for this profile (e.g. `en`)     |
+| `reply_target_label` | string | required| Label shown in replies (`[mr → en]`)                  |
+| `dialect`         | string    | `null`  | Optional dialect hint used in translation prompting    |
+| `preserve_terms`  | list[str] | `[]`    | Terms that should never be translated                  |
+| `prompt_appendix` | string    | `""`    | Profile-specific prompting instructions                |
 
 ### `llm`
 

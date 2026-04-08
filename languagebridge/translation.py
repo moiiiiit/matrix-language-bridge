@@ -168,8 +168,8 @@ async def handle_message(
         source_language_hint=normalized_detected,
         target_language=effective_target,
         prompt_appendix=profile.prompt_appendix,
-        preserve_terms=config.family.preserve_terms,
-        dialect=config.family.dialect,
+        preserve_terms=profile.preserve_terms or config.family.preserve_terms,
+        dialect=profile.dialect or config.family.dialect,
     )
 
     # 9. Call LLM

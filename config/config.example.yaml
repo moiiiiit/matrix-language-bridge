@@ -14,21 +14,8 @@ family:
   # room_profiles:
   #   "!abc123:matrix.org": charje_english_runes
 
-  # Optional: helps the LLM produce more natural output for regional dialects
-  dialect: "Pune Marathi"
-
-  # Family address terms and names that should never be translated.
-  # Add anything that sounds wrong when translated literally.
-  preserve_terms:
-    - kaka
-    - mama
-    - tai
-    - aai
-    - baba
-    - dada
-    - vahini
-    - aji
-    - ajoba
+  # Translation style settings (dialect, preserve_terms) now live in profile files
+  # under languagebridge/profiles/*.yaml.
 
   # auto     — translate every detected foreign message automatically
   # reaction — only translate when someone reacts with reaction_trigger emoji

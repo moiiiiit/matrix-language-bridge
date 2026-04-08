@@ -2,6 +2,8 @@ id: marathi
 target_language: en
 reply_target_label: en<->mr
 bidirectional_with: mr
+dialect: "Pune Marathi"
+preserve_terms: [kaka, mama, tai, aai, baba, dada, vahini, aji, ajoba]
 prompt_appendix: |
   This profile is bidirectional between English and Marathi.
   - If the input is English, translate to natural modern Marathi.
