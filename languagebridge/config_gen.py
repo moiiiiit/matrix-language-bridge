@@ -144,6 +144,14 @@ def main() -> None:
         },
     }
 
+    if os.environ.get("LB_MATRIX_ENCRYPTION", "").strip().lower() in ("1", "true", "yes"):
+        enc: dict[str, object] = {"enabled": True}
+        if p := os.environ.get("LB_MATRIX_E2EE_DB", "").strip():
+            enc["store_path"] = p
+        if pk := os.environ.get("LB_MATRIX_PICKLE_KEY", "").strip():
+            enc["pickle_key"] = pk
+        config["matrix"]["encryption"] = enc  # type: ignore[index]
+
     # Keep YAML concise by dropping null optional keys.
     family = config["family"]
     llm = config["llm"]

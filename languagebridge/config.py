@@ -30,10 +30,19 @@ class FamilyConfig(BaseModel):
     rooms: list[str] = ["*"]
 
 
+class MatrixEncryptionConfig(BaseModel):
+    """Megolm/Olm encryption. Install with ``poetry install --extras e2ee`` plus system libolm."""
+
+    enabled: bool = False
+    store_path: str = "data/languagebridge-e2ee.db"
+    pickle_key: str = ""
+
+
 class MatrixConfig(BaseModel):
     homeserver_url: str
     access_token: str
     user_id: str
+    encryption: MatrixEncryptionConfig = Field(default_factory=MatrixEncryptionConfig)
 
 
 class UIConfig(BaseModel):

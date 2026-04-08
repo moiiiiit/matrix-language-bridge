@@ -1,6 +1,9 @@
 services:
   languagebridge:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
     restart: unless-stopped
     volumes:
       - ./config:/app/config:ro
@@ -11,7 +14,31 @@ services:
     # depends_on:
     #   - ollama
 
-  # --- Optional: mautrix-whatsapp bridge ---
+  # Local dev: DEBUG logging, config-local.yaml, ./data on host (E2EE DB + sqlite persist like `make run-local`)
+  languagebridge-local:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    profiles:
+      - local
+    volumes:
+      - ./config:/app/config:ro
+      - ./data:/app/data
+    environment:
+      LOG_LEVEL: DEBUG
+      CONFIG_PATH: /app/config/config-local.yaml
+
+  # Run tests: `make docker-test` or `docker compose --profile test run --rm languagebridge-test`
+  languagebridge-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: test
+    profiles:
+      - test
+
+  # Optional: mautrix-whatsapp bridge ---
   # Uncomment to bridge your WhatsApp account into Matrix.
   # Full setup guide: https://docs.mau.fi/bridges/go/whatsapp/index.html
   #

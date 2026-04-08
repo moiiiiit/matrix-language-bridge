@@ -2,7 +2,9 @@ APP_NAME := languagebridge
 COMPOSE := docker compose
 CONFIG_LOCAL ?= config/config-local.yaml
 
-.PHONY: setup config-from-env install test run run-local shell lock docker-build docker-up docker-down docker-restart docker-logs docker-ps
+.PHONY: setup config-from-env test run run-local \
+	docker-build docker-up docker-down docker-restart docker-logs docker-ps docker-test \
+	docker-run-local
 
 setup:
 	@if [ -f config/config.yaml ]; then \
@@ -13,28 +15,27 @@ setup:
 	fi
 
 config-from-env:
-	poetry run python -m languagebridge.config_gen
-
-install:
-	poetry install
+	python -m languagebridge.config_gen
 
 test:
-	poetry run pytest tests/ -v
+	$(MAKE) docker-test
 
 run:
-	poetry run languagebridge
+	$(MAKE) docker-up
 
 run-local:
-	LOG_LEVEL=DEBUG CONFIG_PATH=$(CONFIG_LOCAL) poetry run languagebridge
-
-shell:
-	poetry shell
-
-lock:
-	poetry lock
+	$(MAKE) docker-run-local
 
 docker-build:
 	$(COMPOSE) build
+
+docker-test:
+	$(COMPOSE) --profile test run --rm languagebridge-test
+
+# Same idea as run-local: config-local.yaml + DEBUG + ./data (works with matrix.encryption / E2EE in the image).
+docker-run-local:
+	mkdir -p data
+	$(COMPOSE) --profile local run --rm languagebridge-local
 
 docker-up:
 	$(COMPOSE) up -d

@@ -26,22 +26,22 @@ That's it. The bot joins your rooms and starts translating.
 ## Run Commands
 
 ```bash
-# Local run (Poetry)
-make install
+# Build images
+make docker-build
+
+# Start background service (uses config/config.yaml)
 make run
 
-# Local run using config/config-local.yaml (gitignored)
+# Foreground local-like run with config/config-local.yaml and ./data bind mount
 make run-local
 
-# Docker run
-make docker-build
-make docker-up
-make docker-logs
-```
+# Run tests in Docker
+make test
 
-Stop commands:
-- Local: `Ctrl-C`
-- Docker: `make docker-down`
+# View logs / stop
+make docker-logs
+make docker-down
+```
 
 ### Generate config from parameters (cloud-friendly)
 
@@ -71,7 +71,7 @@ Notes:
 - Use `LB_ROOM_PROFILES="!roomA:matrix.org=default,!roomB:matrix.org=charje_english_runes"` for per-room profile overrides.
 - For Ollama, set `LB_LLM_PROVIDER="ollama"` and optionally `LB_LLM_OLLAMA_URL`.
 - For [Charje phonetic runes](http://charje.net/phonetic-table-of-english.html), set `LB_PROFILE=charje_english_runes`.
-- You can also run `poetry run python -m languagebridge.config_gen --help` for flag-based usage.
+- You can also run `python -m languagebridge.config_gen --help` for flag-based usage.
 
 ## Getting a Matrix Access Token
 
@@ -243,24 +243,15 @@ Create a `fly.toml` with a single machine, mount a volume for `/app/data`, and u
 
 Works on a Pi 4 or newer. Install Docker with `curl -fsSL https://get.docker.com | sh`, clone, configure, and run `make docker-up`. Lingua-py compilation takes longer on ARM but works fine. Not recommended for Ollama (too slow for large models), but works well with cloud LLM providers.
 
-## Local Development (Poetry)
+## Development Workflow
 
-```bash
-# Install dependencies and create project virtualenv
-make install
+Use Docker targets for runtime and tests:
 
-# Run the bot locally
-make run
-
-# Same, but load config/config-local.yaml (override path: CONFIG_LOCAL=path make run-local)
-make run-local
-```
-
-Useful commands:
-- `make shell` to open a Poetry shell
-- `make lock` to refresh `poetry.lock`
-- `make config-from-env` to write `config/config.yaml` from `LB_*` variables
-- `make docker-build`, `make docker-up`, `make docker-down`, `make docker-logs`
+- `make run` starts the service in Docker (`docker compose up -d`).
+- `make run-local` runs foreground with `config/config-local.yaml` and `./data`.
+- `make test` runs tests in Docker.
+- `make config-from-env` writes `config/config.yaml` from `LB_*` variables.
+- `make docker-build`, `make docker-up`, `make docker-down`, `make docker-logs`.
 
 ## How It Works
 

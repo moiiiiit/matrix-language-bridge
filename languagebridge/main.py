@@ -12,6 +12,7 @@ from mautrix.client import Client as MatrixClient
 from languagebridge.bot import LanguageBridgeBot
 from languagebridge.config import load_config
 from languagebridge.llm import create_provider
+from languagebridge.matrix_e2ee import attach_olm_machine, create_e2ee_stack
 from languagebridge.storage import Storage
 
 _LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
@@ -97,6 +98,7 @@ async def main() -> None:
 
     client: MatrixClient | None = None
     storage: Storage | None = None
+    e2ee_stack = None
 
     try:
         # 1. Load config
@@ -122,11 +124,19 @@ async def main() -> None:
         logger.info("LLM provider: %s", provider.display_name)
         logger.debug("Configured trigger_mode=%s rooms=%s", config.family.trigger_mode, config.family.rooms)
 
-        # 4. Initialise Matrix client
+        # 4. Initialise Matrix client (optionally with E2EE stores)
+        if config.matrix.encryption.enabled:
+            try:
+                e2ee_stack = await create_e2ee_stack(config)
+            except RuntimeError as e:
+                logger.error("%s", e)
+                sys.exit(1)
         client = MatrixClient(
             base_url=config.matrix.homeserver_url,
             token=config.matrix.access_token,
             client_session=None,
+            state_store=e2ee_stack.state_store if e2ee_stack else None,
+            sync_store=e2ee_stack.crypto_store if e2ee_stack else None,
         )
         client.parse_user_id(config.matrix.user_id)
 
@@ -137,6 +147,13 @@ async def main() -> None:
         except Exception as e:
             logger.error("Failed to connect to Matrix homeserver: %s", e)
             sys.exit(1)
+
+        if e2ee_stack is not None:
+            try:
+                await attach_olm_machine(client, config, e2ee_stack, whoami)
+            except Exception as e:
+                logger.error("Failed to initialise Matrix E2EE: %s", e)
+                sys.exit(1)
 
         # 5. Set up bot
         bot = LanguageBridgeBot(client, config, provider, storage)
@@ -150,15 +167,18 @@ async def main() -> None:
 
         # 7. Start sync loop
         logger.info(
-            "Starting sync loop (trigger_mode=%s, target_language=%s)",
+            "Starting sync loop (trigger_mode=%s, target_language=%s, e2ee=%s)",
             config.family.trigger_mode,
             config.default_profile.target_language,
+            config.matrix.encryption.enabled,
         )
         try:
             await client.start(None)
         except KeyboardInterrupt:
             logger.info("Shutting down...")
     finally:
+        if e2ee_stack is not None:
+            await e2ee_stack.database.stop()
         if client is not None:
             stop_result = client.stop()
             if inspect.isawaitable(stop_result):

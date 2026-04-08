@@ -48,6 +48,11 @@ matrix:
   # Get your access token: Element → Settings → Help & About → Access Token
   access_token: "syt_your_token_here"
   user_id: "@languagebridge:matrix.org"
+  # End-to-end encryption: `poetry install --extras e2ee` plus libolm (e.g. brew install libolm).
+  # encryption:
+  #   enabled: true
+  #   store_path: data/languagebridge-e2ee.db
+  #   pickle_key: "long-random-secret"  # or set LB_MATRIX_PICKLE_KEY instead
 
 llm:
   # One of: anthropic, openai, gemini, ollama

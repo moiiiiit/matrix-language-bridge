@@ -39,8 +39,9 @@ class LanguageBridgeBot:
     def register_handlers(self) -> None:
         """Register Matrix event handlers based on trigger_mode."""
         mode = self._config.family.trigger_mode
-        # Always observe encrypted events so operators know why messages are skipped.
-        self._client.add_event_handler(EventType.ROOM_ENCRYPTED, self._on_encrypted_message)
+        # Without a crypto machine, m.room.encrypted never becomes plain text — warn once per room.
+        if not self._client.crypto_enabled:
+            self._client.add_event_handler(EventType.ROOM_ENCRYPTED, self._on_encrypted_message)
 
         if mode == "auto":
             self._client.add_event_handler(EventType.ROOM_MESSAGE, self._on_message)
