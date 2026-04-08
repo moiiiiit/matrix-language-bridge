@@ -49,13 +49,14 @@ You can generate `config/config.yaml` entirely from environment variables:
 
 ```bash
 LB_FAMILY_NAME="Kulkarni Family" \
-LB_TARGET_LANGUAGE="en" \
+LB_PROFILE="default" \
 LB_DIALECT="Pune Marathi" \
 LB_PRESERVE_TERMS="kaka,mama,tai,aai,baba,dada,vahini,aji,ajoba" \
 LB_TRIGGER_MODE="auto" \
 LB_REACTION_TRIGGER="🌐" \
 LB_COMMAND_PREFIX="!translate" \
 LB_ROOMS="!roomA:matrix.org,!roomB:matrix.org" \
+LB_ROOM_PROFILES="!roomA:matrix.org=default,!roomB:matrix.org=charje_english_runes" \
 LB_MATRIX_HOMESERVER_URL="https://matrix.org" \
 LB_MATRIX_ACCESS_TOKEN="syt_..." \
 LB_MATRIX_USER_ID="@languagebridge:matrix.org" \
@@ -67,7 +68,9 @@ make config-from-env
 
 Notes:
 - Use `LB_ROOMS="*"` to watch all joined rooms.
+- Use `LB_ROOM_PROFILES="!roomA:matrix.org=default,!roomB:matrix.org=charje_english_runes"` for per-room profile overrides.
 - For Ollama, set `LB_LLM_PROVIDER="ollama"` and optionally `LB_LLM_OLLAMA_URL`.
+- For [Charje phonetic runes](http://charje.net/phonetic-table-of-english.html), set `LB_PROFILE=charje_english_runes`.
 - You can also run `poetry run python -m languagebridge.config_gen --help` for flag-based usage.
 
 ## Getting a Matrix Access Token
@@ -158,12 +161,18 @@ Default model: `llama3`. For better Indic language support, try `llama3:70b` if 
 
 All configuration goes in `config/config.yaml`. See `config/config.example.yaml` for a fully commented template.
 
+Profiles live in `languagebridge/profiles/` as YAML files. Add a new profile file
+and set `family.profile` to its name/path to introduce custom output behavior
+without changing backend logic.
+You can also override by room with `family.room_profiles` (`room_id -> profile`).
+
 ### `family`
 
 | Field              | Type       | Default        | Description                                              |
 | ------------------ | ---------- | -------------- | -------------------------------------------------------- |
 | `name`             | string     | *required*     | Family name, used in logs and LLM prompts                |
-| `target_language`  | string     | `"en"`         | ISO 639-1 code of the language to translate INTO         |
+| `profile`          | string     | `"default"`    | Translation profile name/path (e.g. `default`, `charje_english_runes`) |
+| `room_profiles`    | map        | `{}`           | Per-room profile overrides: `room_id -> profile`         |
 | `dialect`          | string     | `null`         | Regional dialect hint (e.g. `"Pune Marathi"`)            |
 | `preserve_terms`   | list[str]  | `[]`           | Words to never translate (e.g. `kaka`, `aai`, `baba`)    |
 | `trigger_mode`     | string     | `"auto"`       | `auto`, `reaction`, or `command`                         |
@@ -187,6 +196,18 @@ All configuration goes in `config/config.yaml`. See `config/config.example.yaml`
 | `api_key`    | string | `null`                           | API key (not needed for ollama)       |
 | `model`      | string | provider default                 | Model override                        |
 | `ollama_url` | string | `"http://localhost:11434"`       | Ollama server URL                     |
+
+### `ui` (optional)
+
+How translation replies and startup notices look in Matrix clients. There is no real opacity or arbitrary CSS in the spec; **subtle** uses [`data-mx-color`](https://spec.matrix.org/latest/client-server-api/#mroommessage-msgtypes)–style coloring and `<small>` where the client allows it.
+
+| Field               | Type   | Default     | Description                                      |
+| ------------------- | ------ | ----------- | ------------------------------------------------ |
+| `message_style`     | string | `"subtle"`  | `normal` or `subtle`                             |
+| `subtle_text_color` | string | `"#8E9597"` | `#RRGGBB` foreground tint for subtle style       |
+| `subtle_use_small`  | bool   | `true`      | Wrap text in `<small>` (ignored if unsupported)  |
+
+Cloud env (with `make config-from-env`): `LB_UI_MESSAGE_STYLE`, `LB_UI_SUBTLE_COLOR`, `LB_UI_SUBTLE_USE_SMALL`.
 
 ### Trigger Modes
 

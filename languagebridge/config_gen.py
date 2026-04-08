@@ -16,6 +16,23 @@ def _split_csv(value: str | None) -> list[str]:
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
+def _split_room_profiles(value: str | None) -> dict[str, str]:
+    """Parse room profile mappings from 'room=profile,room2=profile2'."""
+    if not value:
+        return {}
+    pairs: dict[str, str] = {}
+    for item in value.split(","):
+        item = item.strip()
+        if not item or "=" not in item:
+            continue
+        room, profile = item.split("=", 1)
+        room = room.strip()
+        profile = profile.strip()
+        if room and profile:
+            pairs[room] = profile
+    return pairs
+
+
 def _require(name: str, value: str | None) -> str:
     if value:
         return value
@@ -36,13 +53,17 @@ def main() -> None:
 
     # family
     parser.add_argument("--family-name")
-    parser.add_argument("--target-language")
+    parser.add_argument("--profile")
     parser.add_argument("--dialect")
     parser.add_argument("--preserve-terms")
     parser.add_argument("--trigger-mode")
     parser.add_argument("--reaction-trigger")
     parser.add_argument("--command-prefix")
     parser.add_argument("--rooms")
+    parser.add_argument(
+        "--room-profiles",
+        help='CSV mapping: "!roomA:matrix.org=default,!roomB:matrix.org=charje_english_runes"',
+    )
 
     # matrix
     parser.add_argument("--homeserver-url")
@@ -61,7 +82,7 @@ def main() -> None:
         "family-name / LB_FAMILY_NAME",
         _arg_or_env(args, "family_name", "LB_FAMILY_NAME"),
     )
-    target_language = _arg_or_env(args, "target_language", "LB_TARGET_LANGUAGE") or "en"
+    profile = _arg_or_env(args, "profile", "LB_PROFILE") or "default"
     dialect = _arg_or_env(args, "dialect", "LB_DIALECT")
     preserve_terms_raw = _arg_or_env(args, "preserve_terms", "LB_PRESERVE_TERMS")
     trigger_mode = _arg_or_env(args, "trigger_mode", "LB_TRIGGER_MODE") or "auto"
@@ -72,7 +93,7 @@ def main() -> None:
         _arg_or_env(args, "command_prefix", "LB_COMMAND_PREFIX") or "!translate"
     )
     rooms_raw = _arg_or_env(args, "rooms", "LB_ROOMS") or "*"
-
+    room_profiles_raw = _arg_or_env(args, "room_profiles", "LB_ROOM_PROFILES")
     homeserver_url = _require(
         "homeserver-url / LB_MATRIX_HOMESERVER_URL",
         _arg_or_env(args, "homeserver_url", "LB_MATRIX_HOMESERVER_URL"),
@@ -96,17 +117,19 @@ def main() -> None:
 
     preserve_terms = _split_csv(preserve_terms_raw)
     rooms = _split_csv(rooms_raw) or ["*"]
+    room_profiles = _split_room_profiles(room_profiles_raw)
 
     config: dict[str, object] = {
         "family": {
             "name": family_name,
-            "target_language": target_language,
+            "profile": profile,
             "dialect": dialect,
             "preserve_terms": preserve_terms,
             "trigger_mode": trigger_mode,
             "reaction_trigger": reaction_trigger,
             "command_prefix": command_prefix,
             "rooms": rooms,
+            "room_profiles": room_profiles,
         },
         "matrix": {
             "homeserver_url": homeserver_url,
@@ -126,12 +149,24 @@ def main() -> None:
     llm = config["llm"]
     if not family["dialect"]:
         family.pop("dialect")
+    if not family["room_profiles"]:
+        family.pop("room_profiles")
     if not llm["api_key"]:
         llm.pop("api_key")
     if not llm["model"]:
         llm.pop("model")
     if provider != "ollama" and (not ollama_url):
         llm.pop("ollama_url")
+
+    ui_from_env: dict[str, object] = {}
+    if us := os.environ.get("LB_UI_MESSAGE_STYLE"):
+        ui_from_env["message_style"] = us
+    if uc := os.environ.get("LB_UI_SUBTLE_COLOR"):
+        ui_from_env["subtle_text_color"] = uc
+    if (usm := os.environ.get("LB_UI_SUBTLE_USE_SMALL")) is not None:
+        ui_from_env["subtle_use_small"] = usm.lower() in ("1", "true", "yes")
+    if ui_from_env:
+        config["ui"] = ui_from_env
 
     output_path = Path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)

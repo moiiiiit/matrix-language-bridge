@@ -14,8 +14,9 @@ from languagebridge.config import load_config
 from languagebridge.llm import create_provider
 from languagebridge.storage import Storage
 
+_LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(
-    level=logging.INFO,
+    level=getattr(logging, _LOG_LEVEL, logging.INFO),
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
@@ -37,91 +38,137 @@ class SingleInstanceLock:
         try:
             fcntl.flock(self._fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except OSError:
+            os.close(self._fd)
+            self._fd = None
+            other_pid = _read_lock_pid(self._lock_path)
+            hint = ""
+            if other_pid is not None and _pid_is_alive(other_pid):
+                hint = f" (lock file lists PID {other_pid} — stop that process, or: kill {other_pid})"
+            elif other_pid is not None:
+                hint = (
+                    f" (stale PID {other_pid} in lock file; no process is using it — "
+                    f"try: rm {self._lock_path})"
+                )
             logger.error(
-                "Another LanguageBridge instance is already running "
-                "(lock: %s).",
+                "Another LanguageBridge instance is already running (lock: %s).%s",
                 self._lock_path,
+                hint,
             )
             raise SystemExit(1)
+        try:
+            os.ftruncate(self._fd, 0)
+            os.write(self._fd, str(os.getpid()).encode())
+        except OSError:
+            pass
 
     def release(self) -> None:
         if self._fd is None:
             return
         import fcntl
 
-        fcntl.flock(self._fd, fcntl.LOCK_UN)
-        os.close(self._fd)
-        self._fd = None
+        try:
+            fcntl.flock(self._fd, fcntl.LOCK_UN)
+        finally:
+            os.close(self._fd)
+            self._fd = None
+
+
+def _read_lock_pid(path: Path) -> int | None:
+    try:
+        raw = path.read_text().strip()
+        return int(raw) if raw.isdigit() else None
+    except OSError:
+        return None
+
+
+def _pid_is_alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    return True
 
 
 async def main() -> None:
     lock_path = os.environ.get("LOCK_PATH", "data/languagebridge.lock")
     process_lock = SingleInstanceLock(lock_path)
     process_lock.acquire()
+    logger.debug("Acquired single-instance lock at %s", lock_path)
 
-    # 1. Load config
-    config_path = os.environ.get("CONFIG_PATH", "config/config.yaml")
-    logger.info("Loading config from %s", config_path)
-    config = load_config(config_path)
-    logger.info("Config loaded for family: %s", config.family.name)
+    client: MatrixClient | None = None
+    storage: Storage | None = None
 
-    # 2. Initialise storage
-    db_path = os.environ.get("DB_PATH", "data/languagebridge.db")
-    storage = Storage(db_path)
-    await storage.open()
-    await storage.cleanup_old()
-    logger.info("Storage initialised at %s", db_path)
-
-    # 3. Initialise LLM provider
-    provider = create_provider(config.llm)
-    logger.info("LLM provider: %s", provider.display_name)
-
-    # 4. Initialise Matrix client
-    client = MatrixClient(
-        base_url=config.matrix.homeserver_url,
-        token=config.matrix.access_token,
-        client_session=None,
-    )
-    client.parse_user_id(config.matrix.user_id)
-
-    # Verify connection
     try:
-        whoami = await client.whoami()
-        logger.info("Connected to Matrix as %s", whoami.user_id)
-    except Exception as e:
-        logger.error("Failed to connect to Matrix homeserver: %s", e)
-        await storage.close()
-        sys.exit(1)
+        # 1. Load config
+        config_path = os.environ.get("CONFIG_PATH", "config/config.yaml")
+        logger.info("Loading config from %s", config_path)
+        config = load_config(config_path)
+        logger.info("Config loaded for family: %s", config.family.name)
+        logger.debug(
+            "Profiles loaded: default=%s, room_overrides=%s",
+            config.family.profile,
+            len(config.family.room_profiles),
+        )
 
-    # 5. Set up bot
-    bot = LanguageBridgeBot(client, config, provider, storage)
-    bot.register_handlers()
+        # 2. Initialise storage
+        db_path = os.environ.get("DB_PATH", "data/languagebridge.db")
+        storage = Storage(db_path)
+        await storage.open()
+        await storage.cleanup_old()
+        logger.info("Storage initialised at %s", db_path)
 
-    # 6. Send startup message
-    try:
-        await bot.send_startup_message()
-    except Exception:
-        logger.warning("Failed to send startup messages (non-fatal)")
+        # 3. Initialise LLM provider
+        provider = create_provider(config.llm)
+        logger.info("LLM provider: %s", provider.display_name)
+        logger.debug("Configured trigger_mode=%s rooms=%s", config.family.trigger_mode, config.family.rooms)
 
-    # 7. Start sync loop
-    logger.info(
-        "Starting sync loop (trigger_mode=%s, target_language=%s)",
-        config.family.trigger_mode,
-        config.family.target_language,
-    )
-    try:
-        await client.start(None)
-    except KeyboardInterrupt:
-        logger.info("Shutting down...")
-    finally:
+        # 4. Initialise Matrix client
+        client = MatrixClient(
+            base_url=config.matrix.homeserver_url,
+            token=config.matrix.access_token,
+            client_session=None,
+        )
+        client.parse_user_id(config.matrix.user_id)
+
+        # Verify connection
         try:
+            whoami = await client.whoami()
+            logger.info("Connected to Matrix as %s", whoami.user_id)
+        except Exception as e:
+            logger.error("Failed to connect to Matrix homeserver: %s", e)
+            sys.exit(1)
+
+        # 5. Set up bot
+        bot = LanguageBridgeBot(client, config, provider, storage)
+        bot.register_handlers()
+
+        # 6. Send startup message
+        try:
+            await bot.send_startup_message()
+        except Exception:
+            logger.warning("Failed to send startup messages (non-fatal)")
+
+        # 7. Start sync loop
+        logger.info(
+            "Starting sync loop (trigger_mode=%s, target_language=%s)",
+            config.family.trigger_mode,
+            config.default_profile.target_language,
+        )
+        try:
+            await client.start(None)
+        except KeyboardInterrupt:
+            logger.info("Shutting down...")
+    finally:
+        if client is not None:
             stop_result = client.stop()
             if inspect.isawaitable(stop_result):
                 await stop_result
+            # mautrix client.stop() may not fully close aiohttp session on some paths.
+            await client.api.session.close()
+        if storage is not None:
             await storage.close()
-            logger.info("LanguageBridge stopped.")
-        finally:
-            process_lock.release()
+        process_lock.release()
+        logger.info("LanguageBridge stopped.")
 
 
 def run() -> None:

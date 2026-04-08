@@ -1,0 +1,11 @@
+id: marathi
+target_language: en
+reply_target_label: en<->mr
+bidirectional_with: mr
+prompt_appendix: |
+  This profile is bidirectional between English and Marathi.
+  - If the input is English, translate to natural modern Marathi.
+  - If the input is Marathi (including romanized Marathi), translate to natural English.
+  Use Mumbai Marathi style and slang where natural.
+  When producing Marathi output, use only Roman script (never Devanagari).
+  Keep preserve_terms exactly unchanged.

@@ -4,10 +4,15 @@
 
 family:
   # Display name used in startup messages and logs
-  name: "Kulkarni Family"
+  name: "Friendship"
 
-  # Language to translate messages INTO (ISO 639-1 code)
-  target_language: "en"
+  # Translation profile (file in languagebridge/profiles/*.yaml, or a custom path).
+  # default -> normal English output
+  # charje_english_runes -> English encoded with Charje phonetic runes
+  profile: default
+  # Optional per-room overrides: room_id -> profile
+  # room_profiles:
+  #   "!abc123:matrix.org": charje_english_runes
 
   # Optional: helps the LLM produce more natural output for regional dialects
   dialect: "Pune Marathi"
@@ -60,3 +65,10 @@ llm:
 
   # Only needed for ollama. Defaults to http://localhost:11434
   # ollama_url: http://ollama:11434
+
+# Optional: how bot messages look in Element / Beeper (Matrix HTML subset; not full CSS).
+ui:
+  # normal — plain text; subtle — muted color + optional smaller text where supported
+  message_style: subtle
+  subtle_text_color: "#8E9597"
+  subtle_use_small: true

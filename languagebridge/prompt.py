@@ -10,7 +10,7 @@ def build_system_prompt(context: TranslationContext) -> str:
         if context.dialect
         else ""
     )
-    return f"""You translate chat messages for the {context.family_name} family group chat.
+    base = f"""You translate chat messages for the {context.family_name} family group chat.
 
 Rules:
 - Detect the source language automatically. Messages may be romanized Marathi, romanized Hindi, Devanagari script, English, or any mix of these.
@@ -20,3 +20,6 @@ Rules:
 - If the message is already in {context.target_language}, respond with exactly: [SKIP]
 - If the message is too short or ambiguous to translate meaningfully (single emoji, a name, "ok", "haha", etc.), respond with: [SKIP]
 - Respond with ONLY the translation. No preamble, no explanation, no quotation marks around the output."""
+    if context.prompt_appendix:
+        base += "\n\n" + context.prompt_appendix.strip()
+    return base

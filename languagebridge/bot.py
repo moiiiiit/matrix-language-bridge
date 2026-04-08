@@ -11,10 +11,10 @@ from mautrix.types import (
     ReactionEvent,
     RelationType,
     RoomID,
-    TextMessageEventContent,
 )
 
 from languagebridge.config import Config
+from languagebridge.message_content import text_content
 from languagebridge.llm.base import TranslationProvider
 from languagebridge.storage import Storage
 from languagebridge.translation import handle_message
@@ -162,10 +162,7 @@ class LanguageBridgeBot:
 
     async def _send_reply(self, room_id: RoomID, event_id: str, text: str) -> None:
         """Send a threaded reply (falls back to plain reply)."""
-        content = TextMessageEventContent(
-            msgtype=MessageType.TEXT,
-            body=text,
-        )
+        content = text_content(text, MessageType.TEXT, self._config.ui)
 
         # Use threading (MSC3440 / stable threads)
         content["m.relates_to"] = {
@@ -181,7 +178,7 @@ class LanguageBridgeBot:
 
     async def send_startup_message(self) -> None:
         """Send a startup notification to configured rooms."""
-        target_lang = self._config.family.target_language
+        target_lang = self._config.default_profile.target_language
         provider_name = self._provider.display_name
         msg = (
             f"LanguageBridge connected \u2713 \u2014 watching for messages to translate "
@@ -198,9 +195,7 @@ class LanguageBridgeBot:
 
         for room_id in rooms_to_notify:
             try:
-                content = TextMessageEventContent(
-                    msgtype=MessageType.NOTICE, body=msg
-                )
+                content = text_content(msg, MessageType.NOTICE, self._config.ui)
                 await self._client.send_message_event(
                     RoomID(room_id), EventType.ROOM_MESSAGE, content
                 )

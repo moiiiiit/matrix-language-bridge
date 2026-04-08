@@ -9,6 +9,7 @@ class TranslationContext:
     family_name: str
     source_language_hint: str
     target_language: str
+    prompt_appendix: str = ""
     preserve_terms: list[str] = field(default_factory=list)
     dialect: str | None = None
     tone: str = "casual"

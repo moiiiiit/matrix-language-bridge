@@ -2,7 +2,7 @@ APP_NAME := languagebridge
 COMPOSE := docker compose
 CONFIG_LOCAL ?= config/config-local.yaml
 
-.PHONY: setup config-from-env install run run-local shell lock docker-build docker-up docker-down docker-restart docker-logs docker-ps
+.PHONY: setup config-from-env install test run run-local shell lock docker-build docker-up docker-down docker-restart docker-logs docker-ps
 
 setup:
 	@if [ -f config/config.yaml ]; then \
@@ -18,11 +18,14 @@ config-from-env:
 install:
 	poetry install
 
+test:
+	poetry run pytest tests/ -v
+
 run:
 	poetry run languagebridge
 
 run-local:
-	CONFIG_PATH=$(CONFIG_LOCAL) poetry run languagebridge
+	LOG_LEVEL=DEBUG CONFIG_PATH=$(CONFIG_LOCAL) poetry run languagebridge
 
 shell:
 	poetry shell
