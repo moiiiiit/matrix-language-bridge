@@ -41,7 +41,8 @@ def test_loads_builtin_charje_profile(tmp_path: Path) -> None:
     cfg = load_config(cfg_path)
 
     assert cfg.default_profile.id == "charje_english_runes"
-    assert cfg.default_profile.reply_target_label == "runes"
+    assert cfg.default_profile.reply_target_label == "en"
+    assert cfg.default_profile.target_language == "en"
     assert "Charje" in cfg.default_profile.prompt_appendix
     assert "charje.net" in cfg.default_profile.prompt_appendix
 

@@ -389,3 +389,49 @@ async def test_romanized_marathi_low_confidence_sets_context_hints(storage: Memo
     assert ctx.source_language_hint == "mr"
     assert ctx.target_language == "en"
     send.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_charje_skips_non_rune_input(storage: MemoryStorage) -> None:
+    cfg = _config(
+        profile=TranslationProfile(
+            id="charje_english_runes",
+            target_language="en",
+            reply_target_label="en",
+            prompt_appendix="CHARJE",
+        )
+    )
+    prov = ListProvider(["unused"])
+    send = AsyncMock()
+    with patch(
+        "languagebridge.translation.detect_language",
+        return_value=DetectionResult("en", 0.9),
+    ):
+        await handle_message(
+            ROOM, "$1", "@u:matrix.org", "hello world here", cfg, prov, storage, send
+        )
+    assert len(prov.calls) == 0
+    send.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_charje_decodes_rune_input_to_english(storage: MemoryStorage) -> None:
+    cfg = _config(
+        profile=TranslationProfile(
+            id="charje_english_runes",
+            target_language="en",
+            reply_target_label="en",
+            prompt_appendix="CHARJE",
+        )
+    )
+    prov = ListProvider(["hello"])
+    send = AsyncMock()
+    with patch(
+        "languagebridge.translation.detect_language",
+        return_value=DetectionResult("unknown", 0.0),
+    ):
+        await handle_message(
+            ROOM, "$1", "@u:matrix.org", "ᚻᛖᛚᛟ", cfg, prov, storage, send
+        )
+    assert len(prov.calls) == 1
+    send.assert_awaited_once()

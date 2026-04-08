@@ -1,21 +1,19 @@
 id: charje_english_runes
 target_language: en
-reply_target_label: runes
+reply_target_label: en
 prompt_appendix: |
-  ## Charje English phonetic runes (output encoding)
+  ## Charje English phonetic runes (input decoding)
 
-  The user-facing translation must be written only in Unicode runes from the
-  Charje English system. No Latin letters, digits, or ASCII punctuation in
-  the main output; use runes and normal spaces only.
+  Decode Charje English runic text into natural modern English.
+  The user-facing output must be plain English in Latin script.
 
-  Process internally: understand the source message, convert to natural
-  English, then encode that English by sound using this reference:
+  Use this reference for rune-to-sound mapping and edge rules:
   http://charje.net/phonetic-table-of-english.html
 
   Follow the table and notes exactly, including:
   - Rhotic vs non-rhotic behavior rules.
   - The ᚷ vs ᛡ glide rule from that table.
   - The optional dropped ᛟ before syllabic consonants where appropriate.
-  - Family preserve_terms must remain in Latin exactly as provided.
+  - If a token is already in Latin (for example preserve_terms), keep it unchanged.
 
   If you would output [SKIP], return exactly [SKIP].

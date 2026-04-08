@@ -17,6 +17,14 @@ def _has_non_ascii(text: str) -> bool:
     return bool(re.search(r"[^\x00-\x7F]", text))
 
 
+def _looks_like_charje_runes(text: str) -> bool:
+    chars = [ch for ch in text if not ch.isspace()]
+    if not chars:
+        return False
+    rune_count = sum(1 for ch in chars if 0x16A0 <= ord(ch) <= 0x16FF)
+    return (rune_count / len(chars)) >= 0.6
+
+
 _ROMANIZED_MARATHI_HINTS = {
     "kasa",
     "kashi",
@@ -102,18 +110,26 @@ async def handle_message(
 
     # 5. Language detection
     detection = detect_language(text)
-    logger.debug(
-        "Detected language=%s confidence=%.2f for: %s",
-        detection.language_code,
-        detection.confidence,
-        text[:80],
-    )
-
     profile = config.profile_for_room(str(room_id))
     normalized_detected = _normalized_detected_language(
         profile, detection.language_code, text, detection.confidence
     )
     effective_target = _effective_target_language(profile, normalized_detected)
+    translation_from = normalized_detected
+    translation_to = effective_target
+    logger.debug(
+        (
+            "Original message=%r | detected=%s confidence=%.2f | "
+            "profile=%s bidirectional=%s from=%s to=%s"
+        ),
+        text[:160],
+        detection.language_code,
+        detection.confidence,
+        profile.id,
+        bool(profile.bidirectional_with),
+        translation_from,
+        translation_to,
+    )
     logger.debug(
         "Selected profile '%s' for room=%s target=%s detected=%s normalized=%s effective_target=%s",
         profile.id,
@@ -123,6 +139,12 @@ async def handle_message(
         normalized_detected,
         effective_target,
     )
+
+    # Charje room is decode-only: translate runes to English.
+    if profile.id == "charje_english_runes" and not _looks_like_charje_runes(text):
+        logger.debug("Skipping non-rune input for charje profile event_id=%s", event_id)
+        await storage.mark_processed(event_id, str(room_id))
+        return
 
     # 6. Skip if already in target language with high confidence
     if (
@@ -161,10 +183,11 @@ async def handle_message(
     if result.strip() == "[SKIP]":
         logger.debug("Provider requested SKIP for event_id=%s", event_id)
         # For bidirectional profiles, force one retry with explicit no-SKIP instruction.
-        if profile.bidirectional_with and normalized_detected in {
+        should_retry = profile.bidirectional_with and normalized_detected in {
             profile.target_language,
             profile.bidirectional_with,
-        }:
+        }
+        if should_retry:
             retry_context = TranslationContext(
                 family_name=context.family_name,
                 source_language_hint=context.source_language_hint,
