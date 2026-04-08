@@ -45,7 +45,16 @@ jobs:
           script_stop: true
           script: |
             set -euo pipefail
-            cd "${{ secrets.VULTR_APP_PATH }}"
+            APP_PATH="${{ secrets.VULTR_APP_PATH }}"
+            REPO_URL="https://github.com/${{ github.repository }}.git"
+
+            mkdir -p "$(dirname "$APP_PATH")"
+            if [ ! -d "$APP_PATH/.git" ]; then
+              rm -rf "$APP_PATH"
+              git clone "$REPO_URL" "$APP_PATH"
+            fi
+
+            cd "$APP_PATH"
             test -f config/config.yaml || {
               echo "Missing config/config.yaml on server at $PWD"
               echo "Create it from config/config.example.yaml and add secrets."
