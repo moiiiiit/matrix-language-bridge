@@ -133,7 +133,7 @@ async def main() -> None:
                 sys.exit(1)
         client = MatrixClient(
             base_url=config.matrix.homeserver_url,
-            token=config.matrix.access_token,
+            token=(config.matrix.access_token or "").strip(),
             client_session=None,
             state_store=e2ee_stack.state_store if e2ee_stack else None,
             sync_store=e2ee_stack.crypto_store if e2ee_stack else None,
@@ -141,13 +141,28 @@ async def main() -> None:
         # parse_user_id() only validates/splits; setting mxid ensures crypto upload payloads include user_id.
         client.mxid = config.matrix.user_id
 
-        # Verify connection
+        # Verify connection, with optional password login fallback.
+        matrix_password = os.environ.get("LB_MATRIX_PASSWORD", "").strip() or (
+            (config.matrix.password or "").strip()
+        )
         try:
             whoami = await client.whoami()
             logger.info("Connected to Matrix as %s", whoami.user_id)
         except Exception as e:
-            logger.error("Failed to connect to Matrix homeserver: %s", e)
-            sys.exit(1)
+            if not matrix_password:
+                logger.error("Failed to connect to Matrix homeserver: %s", e)
+                logger.error(
+                    "Provide a valid matrix.access_token or set matrix.password / LB_MATRIX_PASSWORD."
+                )
+                sys.exit(1)
+            logger.warning("Matrix token check failed (%s). Trying password login.", e)
+            try:
+                await client.login(password=matrix_password)
+                whoami = await client.whoami()
+                logger.info("Connected to Matrix via password login as %s", whoami.user_id)
+            except Exception as login_error:
+                logger.error("Matrix password login failed: %s", login_error)
+                sys.exit(1)
 
         if e2ee_stack is not None:
             try:

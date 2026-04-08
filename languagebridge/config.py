@@ -41,7 +41,8 @@ class MatrixEncryptionConfig(BaseModel):
 
 class MatrixConfig(BaseModel):
     homeserver_url: str
-    access_token: str
+    access_token: str = ""
+    password: str | None = None
     user_id: str
     encryption: MatrixEncryptionConfig = Field(default_factory=MatrixEncryptionConfig)
 

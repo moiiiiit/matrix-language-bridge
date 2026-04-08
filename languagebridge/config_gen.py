@@ -68,6 +68,7 @@ def main() -> None:
     # matrix
     parser.add_argument("--homeserver-url")
     parser.add_argument("--access-token")
+    parser.add_argument("--password")
     parser.add_argument("--user-id")
 
     # llm
@@ -98,10 +99,15 @@ def main() -> None:
         "homeserver-url / LB_MATRIX_HOMESERVER_URL",
         _arg_or_env(args, "homeserver_url", "LB_MATRIX_HOMESERVER_URL"),
     )
-    access_token = _require(
-        "access-token / LB_MATRIX_ACCESS_TOKEN",
-        _arg_or_env(args, "access_token", "LB_MATRIX_ACCESS_TOKEN"),
-    )
+    access_token = _arg_or_env(args, "access_token", "LB_MATRIX_ACCESS_TOKEN")
+    password = _arg_or_env(args, "password", "LB_MATRIX_PASSWORD")
+    if not access_token and not password:
+        print(
+            "ERROR: Missing Matrix credentials. Set access-token / LB_MATRIX_ACCESS_TOKEN "
+            "or password / LB_MATRIX_PASSWORD.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     user_id = _require(
         "user-id / LB_MATRIX_USER_ID",
         _arg_or_env(args, "user_id", "LB_MATRIX_USER_ID"),
@@ -133,7 +139,8 @@ def main() -> None:
         },
         "matrix": {
             "homeserver_url": homeserver_url,
-            "access_token": access_token,
+            "access_token": access_token or "",
+            "password": password,
             "user_id": user_id,
         },
         "llm": {
@@ -159,6 +166,8 @@ def main() -> None:
         family.pop("dialect")
     if not family["room_profiles"]:
         family.pop("room_profiles")
+    if not config["matrix"]["password"]:
+        config["matrix"].pop("password")
     if not llm["api_key"]:
         llm.pop("api_key")
     if not llm["model"]:

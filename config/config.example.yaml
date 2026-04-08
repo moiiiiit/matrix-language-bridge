@@ -34,6 +34,9 @@ matrix:
   homeserver_url: "https://matrix.org"
   # Get your access token: Element → Settings → Help & About → Access Token
   access_token: "syt_your_token_here"
+  # Optional alternative to access_token: password login for automatic token refresh flow.
+  # Prefer setting LB_MATRIX_PASSWORD in environment rather than storing plaintext here.
+  # password: "bot-password-here"
   user_id: "@languagebridge:matrix.org"
   # End-to-end encryption: `poetry install --extras e2ee` plus libolm (e.g. brew install libolm).
   # encryption:
