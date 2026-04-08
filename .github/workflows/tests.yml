@@ -5,6 +5,7 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
 
 jobs:
   docker-tests:
@@ -26,3 +27,30 @@ jobs:
       - name: Cleanup containers
         if: always()
         run: docker compose down --remove-orphans
+
+  deploy-vultr:
+    runs-on: ubuntu-latest
+    needs: docker-tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    timeout-minutes: 20
+
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VULTR_HOST }}
+          username: ${{ secrets.VULTR_USER }}
+          key: ${{ secrets.VULTR_SSH_KEY }}
+          port: ${{ secrets.VULTR_PORT || '22' }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.VULTR_APP_PATH }}"
+            test -f config/config.yaml || {
+              echo "Missing config/config.yaml on server at $PWD"
+              echo "Create it from config/config.example.yaml and add secrets."
+              exit 1
+            }
+            git pull --ff-only
+            docker compose build languagebridge
+            docker compose up -d --no-deps languagebridge
