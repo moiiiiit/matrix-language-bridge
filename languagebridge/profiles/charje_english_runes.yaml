@@ -7,13 +7,120 @@ prompt_appendix: |
   Decode Charje English runic text into natural modern English.
   The user-facing output must be plain English in Latin script.
 
-  Use this reference for rune-to-sound mapping and edge rules:
-  http://charje.net/phonetic-table-of-english.html
+  Primary reference: http://charje.net/phonetic-table-of-english.html
+  The list below matches that table’s phoneme/rune/example pairs. Alternates
+  ᚠ̣, ᚦ̣, ᚴ, and ᚴᚳ follow the site’s fricative rows; ᚷ vs ᛡ follows note 4 on the site.
 
-  Follow the table and notes exactly, including:
-  - Rhotic vs non-rhotic behavior rules.
-  - The ᚷ vs ᛡ glide rule from that table.
-  - The optional dropped ᛟ before syllabic consonants where appropriate.
-  - If a token is already in Latin (for example preserve_terms), keep it unchanged.
+  ### Main table (order and examples as on the site)
 
-  If you would output [SKIP], return exactly [SKIP].
+  - b — ᛒ — Birch — ᛒᛟᚱᚳ
+  - d — ᛞ — Day — ᛞᛖᚷ
+  - g (as in gift) — ᚸ — Gift — ᚸᛁᚠᛏ
+  - long “ee” (i + glide column “iy”) — ᛁᚷ — Even — ᛁᚷᚠ̣ᛟᚾ
+  - “oo” — ᚢ — Ooze — ᚢᚴ
+  - ɔɪ / oy — ᚩᚷ — Oink — ᚩᚷᛝᛣ
+  - p — ᛈ — Pear — ᛈᛖᚱ
+  - t — ᛏ — Tear — ᛏᛁᚷᚱ
+  - k — ᛣ — Key — ᛣᛁᚷ
+  - ʤ (as in jump); Latin j in that row — ᚳᚷ — Jump — ᚳᚷᛟᛗᛈ
+  - ɪ / short i — ᛁ — Inn — ᛁᚾ
+  - ʊ / ü — ᚣ — Hood — ᚻᚣᛞ
+  - eɪ / ey — ᛖᚷ — Eight — ᛖᚷᛏ
+  - m — ᛗ — Man — ᛗᚫᚾ
+  - n — ᚾ — Need — ᚾᛁᚷᛞ
+  - ŋ — ᛝ — King — ᛣᛁᛝ
+  - ʧ / c — ᚳ — Choose — ᚳᚢᚴ
+  - ɛ / e — ᛖ — End — ᛖᚾᛞ
+  - ə, ʌ / ë — ᛟ — Abode — ᛟᛒᚩᛞ
+  - aɪ / äy — ᚫᚷ — Eye — ᚫᚷ
+  - f, v — ᚠ (fricative alternate ᚠ̣ on the site) — Fee — ᚠᛁᚷ
+  - θ, ð / þ — ᚦ (fricative alternate ᚦ̣ on the site) — Thorn — ᚦᚩᚱᚾ
+  - s, z — ᛋ (alternate ᚴ on the site) — Sun — ᛋᛟᚾ
+  - h (and scribal ꜧ in that cell on the site) — ᚻ — Hail Yew — ᚻᛖᚷᛚ᛫ᛡᚢ
+    (᛫ = U+16EB runic single punctuation, as between words on the page)
+  - velar fricative (rare in English) — ᛇ — (no example word on the site; see note 5)
+  - ʃ, ʒ; Latin sc — ᛋᚳ (alternate digraph ᚴᚳ on the site) — Sheep — ᛋᚳᛁᚷᛈ
+  - æ / ä — ᚫ — Ash — ᚫᛋᚳ
+  - ɑ / a — ᚪ — Odd — ᚪᛞ
+  - oʊ / o — ᚩ — Oath — ᚩᚦ
+  - w — ᚹ — Win — ᚹᛁᚾ
+  - l — ᛚ — Lake — ᛚᛖᚷᛣ
+  - ɹ / r — ᚱ — Ride — ᚱᚫᚷᛞ
+  - glide y: site row shows ᚷ (context) / j / Latin y / ᛡ — Year — ᛡᛁᚷᚱ
+    (use ᚷ only where note 4 requires; otherwise ᛡ for this sound)
+
+  ### Rhotic series
+
+  - iɹ / iyr — ᛁᚷᚱ — Seer — ᛋᛁᚷᚱ
+  - ɪɹ / ir — ᛁᚱ — Ear — ᛁᚱ
+  - ɛɹ / er — ᛖᚱ — Air — ᛖᚱ
+  - uɹ / ur — ᚢᚱ — Poor — ᛈᚢᚱ
+  - ʊɹ / ür — ᚣᚱ — Tour — ᛏᚣᚱ
+  - ɝ, ʌɹ / ër — ᛟᚱ — Earth — ᛟᚱᚦ
+  - æɹ / är — ᚫᚱ — Arrow — ᚫᚱᚩ
+  - ɑɹ / ar — ᚪᚱ — Art — ᚪᚱᛏ
+  - ɔɹ / or — ᚩᚱ — Oar — ᚩᚱ
+
+  ### Notes (from the site)
+
+  1. Accent variation; for rhotic series trust the named sound over IPA. Site examples: “year” ᛡᛁᚷᚱ, “poor” ᛈᚩᚱ, “Autumn” ᚪᛏᛗ. Non-rhotic simplifications on the site include: ᛋᛁᚷᛟ, ᛁᚷᛟ, ᛖᛟ, ᛈᚪᚢ, ᛏᚪᚢ, ᛟᚱᚦ, ᚫᚱᚩ, ᚪᛏ, ᚪᚢ.
+  2. After ᛟ, syllabic ᛗ ᚾ ᛝ ᛚ ᚱ: ᛟ may drop if pronunciation is unchanged and no doubled runes.
+  3. Fricative alternates disambiguate, e.g. “visions” ᚠ̣ᛁᚴᚳᚾᚴ (exact string on the site).
+  4. ᚷ after ᚳ, ᛁ, ᚩ, ᛖ, ᚫ; ᛡ elsewhere for that glide.
+  5. ᛇ is rare in native English; use for loans/dialects.
+
+  ### Unicode names (glyphs used in Charje messages)
+
+  Combine U+0323 COMBINING DOT BELOW with ᚠ or ᚦ for ᚠ̣ / ᚦ̣.
+
+  - ᛫ U+16EB RUNIC SINGLE PUNCTUATION
+
+  - ᚠ U+16A0 RUNIC LETTER FEHU FEOH FE F
+  - ᚢ U+16A2 RUNIC LETTER URUZ UR U
+  - ᚣ U+16A3 RUNIC LETTER YR
+  - ᚦ U+16A6 RUNIC LETTER THURISAZ THURS THORN
+  - ᚩ U+16A9 RUNIC LETTER OS O
+  - ᚪ U+16AA RUNIC LETTER AC A
+  - ᚫ U+16AB RUNIC LETTER AESC
+  - ᚱ U+16B1 RUNIC LETTER RAIDO RAD REID R
+  - ᚲ U+16B2 RUNIC LETTER KAUNA
+  - ᚳ U+16B3 RUNIC LETTER CEN
+  - ᚴ U+16B4 RUNIC LETTER KAUN K
+  - ᚷ U+16B7 RUNIC LETTER GEBO GYFU G
+  - ᚸ U+16B8 RUNIC LETTER GAR
+  - ᚹ U+16B9 RUNIC LETTER WUNJO WYNN W
+  - ᚻ U+16BB RUNIC LETTER HAEGL H
+  - ᚾ U+16BE RUNIC LETTER NAUDIZ NYD NAUD N
+  - ᛁ U+16C1 RUNIC LETTER ISAZ IS ISS I
+  - ᛇ U+16C7 RUNIC LETTER IWAZ EOH
+  - ᛈ U+16C8 RUNIC LETTER PERTHO PEORTH P
+  - ᛉ U+16C9 RUNIC LETTER ALGIZ EOLHX
+  - ᛊ U+16CA RUNIC LETTER SOWILO S
+  - ᛋ U+16CB RUNIC LETTER SIGEL LONG-BRANCH-SOL S
+  - ᛏ U+16CF RUNIC LETTER TIWAZ TIR TYR T
+  - ᛒ U+16D2 RUNIC LETTER BERKANAN BEORC BJARKAN B
+  - ᛖ U+16D6 RUNIC LETTER EHWAZ EH E
+  - ᛗ U+16D7 RUNIC LETTER MANNAZ MAN M
+  - ᛚ U+16DA RUNIC LETTER LAUKAZ LAGU LOGR L
+  - ᛜ U+16DC RUNIC LETTER INGWAZ
+  - ᛝ U+16DD RUNIC LETTER ING
+  - ᛞ U+16DE RUNIC LETTER DAGAZ DAEG D
+  - ᛟ U+16DF RUNIC LETTER OTHALAN ETHEL O
+  - ᛡ U+16E1 RUNIC LETTER IOR
+  - ᛣ U+16E3 RUNIC LETTER CALC
+
+  ### Elder Futhark (24): standard fuþark row in Unicode
+
+  Order (one inscriptional convention; Charje sounds are not the same as historical letter values):
+  ᚠ ᚢ ᚦ ᚨ ᚱ ᚲ ᚷ ᚹ ᚻ ᚾ ᛁ ᛇ ᛈ ᛉ ᛊ ᛏ ᛒ ᛖ ᛗ ᛚ ᛜ ᛞ ᚪ ᛟ
+
+  Names (common Germanic runology labels, for orientation): Fehu, Uruz, Thurisaz,
+  Ansuz, Raido, Kaunan, Gebo, Wunjo, Hagalaz, Naudiz, Isaz, Eihwaz, Perthro,
+  Algiz, Sowilo, Tiwaz, Berkano, Ehwaz, Mannaz, Laguz, Ingwaz, Dagaz, Ac,
+  Othala.
+
+  Charje reuses these code points for English phonetics; decode using the Charje
+  table above, not historical *Runic letter …* meanings alone.
+
+  - If a token is already in Latin (e.g. preserve_terms), leave it unchanged.
+  - If you would output [SKIP], return exactly [SKIP].
