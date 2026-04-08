@@ -41,7 +41,7 @@ docker-up:
 	$(COMPOSE) up -d
 
 docker-down:
-	$(COMPOSE) down
+	$(COMPOSE) down --remove-orphans
 
 docker-restart:
 	$(COMPOSE) restart $(APP_NAME)
