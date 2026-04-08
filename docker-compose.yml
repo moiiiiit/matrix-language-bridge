@@ -10,6 +10,7 @@ services:
       - languagebridge-data:/app/data
     environment:
       - CONFIG_PATH=/app/config/config.yaml
+      - LB_MATRIX_PASSWORD=${LB_MATRIX_PASSWORD:-}
     # Optional: uncomment to add a local Ollama for free on-device translation
     # depends_on:
     #   - ollama
@@ -41,6 +42,7 @@ services:
     environment:
       LOG_LEVEL: DEBUG
       CONFIG_PATH: /app/config/config-local.yaml
+      LB_MATRIX_PASSWORD: ${LB_MATRIX_PASSWORD:-}
 
   # Run tests: `make docker-test` or `docker compose --profile test run --rm languagebridge-test`
   languagebridge-test:
