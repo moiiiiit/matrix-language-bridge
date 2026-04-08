@@ -14,6 +14,19 @@ services:
     # depends_on:
     #   - ollama
 
+  # One-shot init: ensure /app/data is writable by appuser (uid/gid 1000)
+  languagebridge-init:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    profiles:
+      - init
+    user: root
+    volumes:
+      - languagebridge-data:/app/data
+    entrypoint: ["sh", "-lc", "mkdir -p /app/data && chown -R 1000:1000 /app/data"]
+
   # Local dev: DEBUG logging, config-local.yaml, ./data on host (E2EE DB + sqlite persist like `make run-local`)
   languagebridge-local:
     build:
