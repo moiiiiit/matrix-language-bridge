@@ -1,0 +1,11 @@
+id: japanese
+target_language: en
+reply_target_label: en<->ja
+bidirectional_with: ja
+dialect: "Standard Japanese"
+preserve_terms: []
+prompt_appendix: |
+  This profile is bidirectional between English and Japanese.
+  - If the input is English, translate to natural modern Japanese.
+  - If the input is Japanese, translate to natural English.
+  Preserve names, handles, links, and technical terms exactly unless a natural Japanese rendering is clearly standard.
