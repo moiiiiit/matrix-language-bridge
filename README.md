@@ -253,7 +253,7 @@ Works on a Pi 4 or newer. Install Docker with `curl -fsSL https://get.docker.com
 
 Use Docker targets for runtime and tests:
 
-- `make run` starts the service in Docker (`docker compose up -d`).
+- `make run` starts the service in Docker (`docker compose up`, foreground; use `docker compose up -d` for detached).
 - `make run-local` runs foreground with `config/config-local.yaml` and `./data`.
 - `make test` runs tests in Docker.
 - `make config-from-env` writes `config/config.yaml` from `LB_*` variables.
