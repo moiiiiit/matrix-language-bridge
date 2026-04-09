@@ -38,7 +38,7 @@ docker-run-local:
 	$(COMPOSE) --profile local run --rm languagebridge-local
 
 docker-up:
-	$(COMPOSE) up -d
+	$(COMPOSE) up
 
 docker-down:
 	$(COMPOSE) down --remove-orphans

@@ -1,128 +1,92 @@
 id: charje_english_runes
 target_language: en
 reply_target_label: en
-dialect: "Pune Marathi"
-preserve_terms: [kaka, mama, tai, aai, baba, dada, vahini, aji, ajoba]
+dialect: "American English"
+preserve_terms: []
 prompt_appendix: |
   ## Charje English phonetic runes (input decoding)
 
-  Decode Charje English runic text into natural modern English.
-  The user-facing output must be plain English in Latin script.
+  Decode English runic text into natural modern English. The
+  user-facing output must be plain English in Latin script. The input
+  will be mostly modern English, but it will also have some Anglish
+  words such as ᚠᚫᚾᛞ (fand (try)), ᛋᚪᚢᚾᛞ (sond (message)), so if you
+  come across a word that you do not know to be in modern English,
+  give your best guess on the spelling to match the phonetic rune
+  input. You may need to find words that have been combined together
+  without a word separator such as ᛋᛏᚫᚠᚹᛟᚱᛞ (staff + word (acronym)). You
+  may find different suffixes as well such as ᚱᚢᚾᛁᛋᚳ (runish (runic)).
 
-  Primary reference: http://charje.net/phonetic-table-of-english.html
-  The list below matches that table’s phoneme/rune/example pairs. Alternates
-  ᚠ̣, ᚦ̣, ᚴ, and ᚴᚳ follow the site’s fricative rows; ᚷ vs ᛡ follows note 4 on the site.
+  This is a phonetic script that represents how modern English is
+  spoken by American English speakers. There are no silent
+  letters. There will never be two of the same rune in a row. The
+  unicode character ᛫ (U+16EB RUNIC SINGLE PUNCTUATION) is used to
+  separate words instead of space; there are no apostrophes (ᛞᚩᚾᛏ
+  (dont)); other punctuation is the same as modern English. The
+  following is a description of how each runic letter is used and
+  which sound(s) it makes for modern English. This runic alphabet
+  shares some unicode symbols with Elder Futhark, but this has nothing
+  to do with Elder Futhark. Each line has the rune (or runes) itself,
+  International Phonetic Alphabet (IPA), a description, and
+  nonexhaustive examples.
 
-  ### Main table (order and examples as on the site)
+  Digraphs Vowels:
+  - ᛖᚷ: IPA: /eɪ/; description: unrounded closing mid front vowel, “long A sound”, never “eg sound”; examples: ᛖᚷᛏ (eight), ᚻᛖᚷ (hey), ᛋᛖᚷ (say), ᚠᛖᚷᛣ (fake), ᛚᛖᚷᛟᚱ (layer), ᚹᛖᚷᛏ (wait), ᛖᚷ (a)
+  - ᚫᚷ: IPA: /aɪ/; description: unrounded closing open front vowel, “long I sound”, never “ag sound”; examples: ᚫᚷ (eye), ᚠᚫᚷᛏ (fight), ᛒᚫᚷᛣ (bike), ᚫᚷᛏᛟᛗ (item), ᚫᚷᛋ (ice), ᛒᚫᚷ (by), ᛒᚫᚷ (bye), ᛈᚫᚷ (pie)
+  - ᚩᚷ: IPA: /ɔɪ/; description: unrounded closing open-mid back vowel, never “og sound”; examples: ᚩᚷᛝᛣ (oink), ᛒᚩᚷ (boy), ᚾᚩᚷᚴᛁᚷ (noisy), ᛁᚾᚳᚷᚩᚷ (enjoy), ᚩᚷᛋᛏᛟᚱ (oyster)
+  - ᛁᚷ: IPA: /i/; description: unrounded close front vowel, “long E sound”, never “ig sound”; examples: ᛁᚷᚠᛟᚾ (even), ᚠᛁᚷᛚ (feel), ᚻᛁᚷᛏ (heat), ᛒᛁᚷᚾ (bean), ᛗᛁᚷᛏ (meet), ᛗᛁᚷᛏ (mete), ᚻᛁᚷ (he), ᛋᚳᛁᚷ (she), ᚦᛁᚷ (the)
+  - ᚫᚢ: IPA: /aʊ/; description: rounded closing open vowel; examples: ᚫᚢ (ow), ᛗᚫᚢᚦ (mouth), ᛞᚫᚢᚾ (down)
+  - ᚪᚢ: IPA: /ɔ/; description: rounded open back vowel; examples: ᚪᚢ (awe), ᚪᚢᚾ (on), ᛏᚪᚢᛣ (talk), ᛚᚪᚢ (law), ᛞᚪᚢᚾ (dawn), ᛞᚪᚢᛏᛟᚱ (daughter)
 
-  - b — ᛒ — Birch — ᛒᛟᚱᚳ
-  - d — ᛞ — Day — ᛞᛖᚷ
-  - g (as in gift) — ᚸ — Gift — ᚸᛁᚠᛏ
-  - long “ee” (i + glide column “iy”) — ᛁᚷ — Even — ᛁᚷᚠ̣ᛟᚾ
-  - “oo” — ᚢ — Ooze — ᚢᚴ
-  - ɔɪ / oy — ᚩᚷ — Oink — ᚩᚷᛝᛣ
-  - p — ᛈ — Pear — ᛈᛖᚱ
-  - t — ᛏ — Tear — ᛏᛁᚷᚱ
-  - k — ᛣ — Key — ᛣᛁᚷ
-  - ʤ (as in jump); Latin j in that row — ᚳᚷ — Jump — ᚳᚷᛟᛗᛈ
-  - ɪ / short i — ᛁ — Inn — ᛁᚾ
-  - ʊ / ü — ᚣ — Hood — ᚻᚣᛞ
-  - eɪ / ey — ᛖᚷ — Eight — ᛖᚷᛏ
-  - m — ᛗ — Man — ᛗᚫᚾ
-  - n — ᚾ — Need — ᚾᛁᚷᛞ
-  - ŋ — ᛝ — King — ᛣᛁᛝ
-  - ʧ / c — ᚳ — Choose — ᚳᚢᚴ
-  - ɛ / e — ᛖ — End — ᛖᚾᛞ
-  - ə, ʌ / ë — ᛟ — Abode — ᛟᛒᚩᛞ
-  - aɪ / äy — ᚫᚷ — Eye — ᚫᚷ
-  - f, v — ᚠ (fricative alternate ᚠ̣ on the site) — Fee — ᚠᛁᚷ
-  - θ, ð / þ — ᚦ (fricative alternate ᚦ̣ on the site) — Thorn — ᚦᚩᚱᚾ
-  - s, z — ᛋ (alternate ᚴ on the site) — Sun — ᛋᛟᚾ
-  - h (and scribal ꜧ in that cell on the site) — ᚻ — Hail Yew — ᚻᛖᚷᛚ᛫ᛡᚢ
-    (᛫ = U+16EB runic single punctuation, as between words on the page)
-  - velar fricative (rare in English) — ᛇ — (no example word on the site; see note 5)
-  - ʃ, ʒ; Latin sc — ᛋᚳ (alternate digraph ᚴᚳ on the site) — Sheep — ᛋᚳᛁᚷᛈ
-  - æ / ä — ᚫ — Ash — ᚫᛋᚳ
-  - ɑ / a — ᚪ — Odd — ᚪᛞ
-  - oʊ / o — ᚩ — Oath — ᚩᚦ
-  - w — ᚹ — Win — ᚹᛁᚾ
-  - l — ᛚ — Lake — ᛚᛖᚷᛣ
-  - ɹ / r — ᚱ — Ride — ᚱᚫᚷᛞ
-  - glide y: site row shows ᚷ (context) / j / Latin y / ᛡ — Year — ᛡᛁᚷᚱ
-    (use ᚷ only where note 4 requires; otherwise ᛡ for this sound)
+  Monograph Vowels:
+  - ᛟ: IPA: /ə/; description: unrounded mid central vowel, schwa; examples: ᛟᛒᚫᚢᛏ (about), ᛟᛒᚩᛞ (abode), ᚦᛟ (the), ᛟ (a), ᚾᛟᛏ (nut), ᛋᚫᛚᛟᛞ (salad), ᛏᛖᚷᛣᛟᚾ (taken), ᛚᛖᛗᛟᚾ (lemon), ᛟᛈᚪᚢᚾ (upon), ᛋᛟᚱᛁᚾᚳᚷ (syringe), ᛋᛟᛗ (some)
+  - ᛁ: IPA: /ɪ/; description: unrounded near-close front vowel, “short I sound”; examples: ᚠᛁᛏ (fit), ᛁᚾ (in), ᛁᚾ (inn), ᛁᚾᚳ (inch)
+  - ᛖ: IPA: /ɛ/; description: unrounded open-mid front vowel, “short E sound”; examples: ᛖᚾᛞ (end), ᛒᛖᛞ (bed), ᚻᛖᛞ (head), ᛚᛖᛞ (lead)
+  - ᚫ: IPA: /æ/; description: unrounded near-open front vowel “short A sound”; examples: ᚫᛋᚳ (ash), ᛣᚫᛏ (cat), ᚻᚫᛈᛁᚷ (happy), ᚫᛈᛟᛚ (apple), ᚻᚫᚾᛞ (hand)
+  - ᚪ: IPA: /ɑ/; description: unrounded open back vowel; examples: ᚪᛞ (odd), ᛋᛏᚪᛈ (stop), ᚠᚪᚦᛟᚱ (father), ᛋᛈᚪ (spa), ᛚᚪᛣ (lock), ᚠᚪᛚᚩ (follow)
+  - ᚩ: IPA: /oʊ/; description: rounded closing mid back vowel, “long O sound”; examples: ᚩᚦ (oath), ᚾᚩ (no), ᚾᚩ (know), ᛣᛚᚩᚴ (close), ᚻᚩᛗ (home)
+  - ᚣ: IPA: /ʊ/; description: near-close back-central vowel, “short OO sound”, never “y sound” or “long E sound”; examples: ᚻᚣᛞ (hood), ᚹᚣᛚ (wool), ᛣᚣᛞ (could), ᛈᚣᛏ (put)
+  - ᚢ: IPA: /u/; description: rounded close back vowel, “long OO sound”; examples: ᚢᚴ (ooze), ᚠᛡᚢ (few), ᛋᛣᚢᛚ (school), ᛒᛚᚢ (blue), ᛒᛚᚢ (blew)
 
-  ### Rhotic series
+  Digraph Consonants:
+  - ᛋᚳ: IPA: /ʃ/; description: unvoiced post-alveolar fricative, “sh sound”, sometimes “sch sound”, never “sc sound” or “sk sound”; examples: ᛋᚳᛁᚷᛈ (sheep), ᛗᛟᛋᚳᛁᚷᚾ (machine), ᚫᛋᚳ (ash), ᚫᛣᛋᚳᛟᚾ (action)
+  - ᚴᚳ: IPA: /ʒ/; description: voiced post-alveolar fricative, “zh sound”; examples: ᚴᚳᚪᚾᚱᛟ (genre), ᛒᛖᚷᚴᚳ (beige), ᛚᛁᚷᚴᚳ (liege), ᛗᛖᚴᚳᛟᚱ (measure)
+  - ᚳᚷ: IPA: /ʤ/; description: voiced post-alveolar affricate, “j sound”; examples: ᚳᚷᛟᛗᛈ (jump), ᚳᚷᚪᚾ (john), ᚾᚪᛚᛁᚳᚷ (knowledge), ᛗᛁᚳᚷ (midge), ᛖᚳᚷ (edge)
+  - ᚻᚹ: IPA: /hw/; description: unvoiced glottal fricative followed by bilabial approximant, “wh sound”; examples: ᚻᚹᛟᛏ (what), ᚻᚹᛖᚱ (where), ᛋᛟᛗᚻᚹᛖᚱ (somewhere), ᚻᚹᚫᚷ (why)
+  - ᛣᛋ: IPA: /ks/; description: unvoiced velar stop followed by unvoiced alveolar fricative, “x sound”, used in words from English, Old English, or Germanic tongues; examples: ᛋᛁᛣᛋ (six), ᛋᚪᛣᛋ (socks), ᚠᚪᛣᛋ (fox), ᚫᛣᛋ (axe)
 
-  - iɹ / iyr — ᛁᚷᚱ — Seer — ᛋᛁᚷᚱ
-  - ɪɹ / ir — ᛁᚱ — Ear — ᛁᚱ
-  - ɛɹ / er — ᛖᚱ — Air — ᛖᚱ
-  - uɹ / ur — ᚢᚱ — Poor — ᛈᚢᚱ
-  - ʊɹ / ür — ᚣᚱ — Tour — ᛏᚣᚱ
-  - ɝ, ʌɹ / ër — ᛟᚱ — Earth — ᛟᚱᚦ
-  - æɹ / är — ᚫᚱ — Arrow — ᚫᚱᚩ
-  - ɑɹ / ar — ᚪᚱ — Art — ᚪᚱᛏ
-  - ɔɹ / or — ᚩᚱ — Oar — ᚩᚱ
+  Monographs Consonants:
+  - ᛒ: IPA: /b/; description: voiced bilabial stop, “b sound”; examples: ᛒᛟᚱᚳ (birch)
+  - ᛈ: IPA: /p/; description: unvoiced bilabial stop, “p sound”; examples: ᛈᛖᚱ (pear)
+  - ᛗ: IPA: /m/; description: voiced bilabial nasal, “m sound”; examples: ᛗᚫᚾ (man)
+  - ᚠ: IPA: /f/; description: unvoiced labiodental fricative, “f sound”; examples: ᚠᛁᚷ (fee)
+  - ᚠ̣: IPA: /v/; description: voiced labiodental fricative, “v sound”; examples: ᚠ̣ᚫᛏ (vat)
+  - ᚹ: IPA: /w/; description: voiced bilabial approximant, “w sound”; examples: ᚹᛁᚾ (win)
+  - ᛞ: IPA: /d/; description: voiced alveolar stop, “d sound”; examples: ᛞᛖᚷ (day)
+  - ᛏ: IPA: /t/; description: unvoiced alveolar stop, “t sound”; examples: ᛏᛁᚷᚱ (tear)
+  - ᚾ: IPA: /n/; description: voiced alveolar nasal, “n sound”; examples: ᚾᛁᚷᛞ (need)
+  - ᛋ: IPA: /s/; description: unvoiced alveolar fricative, “s sound”; examples: ᛋᛟᚾ (sun)
+  - ᚴ: IPA: /z/; description: voiced alveolar fricative, “z sound”, never “k sound” or “c sound”; examples: ᚴᛁᚷᛒᚱᛟ (zebra)
+  - ᛚ: IPA: /l/; description: alveolar approximant, “l sound”; examples: ᛚᛖᚷᛣ (Lake)
+  - ᚸ: IPA: /g/; description: voiced velar stop, “g sound”; examples: ᚸᛁᚠᛏ (gift)
+  - ᛣ: IPA: /k/; description: unvoiced velar stop, “k sound” or “c sound”; examples: ᛣᛁᚷ (key)
+  - ᛝ: IPA: /ŋ/; description: voiced velar nasal, “ng sound” and ”n before k sound“; examples: ᛣᛁᛝ (king), ᚦᛁᛝᛣ (think)
+  - ᚻ: IPA: /h/; description: glottal fricative, “h sound”; examples: ᚻᛖᚷᛚ (hail)
+  - ᚳ: IPA: /ʧ/; description: unvoiced post-alveolar affricate, “ch sound”, never “k sound” or “c sound”; examples: ᚳᚢᚴ (choose)
+  - ᚱ: IPA: /ɹ/; description: post-alveolar approximant, “r sound”; examples: ᚱᚫᚷᛞ (ride)
+  - ᛡ: IPA: /j/; description: palatal approximant, “y sound”, never “h sound” or “long E sound”, will never be written right after ᚷ; examples: ᛡᛁᚷᚱ (year)
+  - ᚦ: IPA: /θ/; description: unvoiced dental fricative “th sound”; examples: ᚦᚩᚱᚾ (thorn)
+  - ᚦ̣: IPA: /ð/; description: voiced dental fricative “th sound”; examples: ᛒᛖᚷᚦ̣ (bathe)
+  - ᛉ: IPA: /ks/; description: unvoiced velar stop followed by unvoiced alveolar fricative, “x sound”, used in words from French, Latin, Greek, or Romance tongues; examples: ᛖᛉᚫᛗᛈᛟᛚ (example), ᛖᛣᚪᚢᛋᛏ (exhaust), ᚠᛁᛉ (fix), ᛗᚫᛉᛁᚾᛟᛗ (maximum), ᚫᛉᛁᚷᛟᛗ (axiom), ᛗᛖᚷᛏᚱᛁᛉ (matrix)
 
-  ### Notes (from the site)
+  Rhotic Pairs:
+  - ᛟᚱ: IPA: /ɝ/; description: r-colored schwa, “ER sound”; examples: ᛟᚱᚦ (earth), ᚠᛟᚱᚦᛟᚱ (further)
+  - ᚩᚱ: IPA: /ɔɹ/; description: r-colored rounded open back vowel, “OR sound”; examples: ᚩᚱ (oar), ᚩᚱ (or)
 
-  1. Accent variation; for rhotic series trust the named sound over IPA. Site examples: “year” ᛡᛁᚷᚱ, “poor” ᛈᚩᚱ, “Autumn” ᚪᛏᛗ. Non-rhotic simplifications on the site include: ᛋᛁᚷᛟ, ᛁᚷᛟ, ᛖᛟ, ᛈᚪᚢ, ᛏᚪᚢ, ᛟᚱᚦ, ᚫᚱᚩ, ᚪᛏ, ᚪᚢ.
-  2. After ᛟ, syllabic ᛗ ᚾ ᛝ ᛚ ᚱ: ᛟ may drop if pronunciation is unchanged and no doubled runes.
-  3. Fricative alternates disambiguate, e.g. “visions” ᚠ̣ᛁᚴᚳᚾᚴ (exact string on the site).
-  4. ᚷ after ᚳ, ᛁ, ᚩ, ᛖ, ᚫ; ᛡ elsewhere for that glide.
-  5. ᛇ is rare in native English; use for loans/dialects.
+  For acronyms or other transliteration needs use the following one way maps:
+  - {"ᛒ": "B", "ᛈ": "P", "ᛗ": "M", "ᚠ": "F", "ᚠ̣": "V", "ᚹ": "W", "ᛞ": "D", "ᛏ": "T", "ᚾ": "N", "ᛋ": "S", "ᚴ": "Z", "ᛚ": "L", "ᚸ": "G", "ᛣ": "K", "ᛉ": "X", "ᛝ": "NG", "ᚻ": "H", "ᚳ": "C", "ᚦ": "TH", "ᚷ": "J", "ᛡ": "J", "ᚱ": "R", "ᛟ": "E", "ᛁ": "I", "ᛖ": "E", "ᚫ": "A", "ᚪ": "A", "ᚩ": "O", "ᚣ": "Y", "ᚢ": "U",}
+  - {"A": "ᚫ", "B": "ᛒ", "C": "ᚳ", "D": "ᛞ", "E": "ᛖ", "F": "ᚠ", "G": "ᚸ", "H": "ᚻ", "I": "ᛁ", "J": "ᛡ", "K": "ᛣ", "L": "ᛚ", "M": "ᛗ", "N": "ᚾ", "O": "ᚩ", "P": "ᛈ", "Q": "ᛣ", "R": "ᚱ", "S": "ᛋ", "T": "ᛏ", "U": "ᚢ", "V": "ᚠ̣", "W": "ᚹ", "X": "ᛉ", "Y": "ᚣ", "Z": "ᚴ"}
 
-  ### Unicode names (glyphs used in Charje messages)
-
-  Combine U+0323 COMBINING DOT BELOW with ᚠ or ᚦ for ᚠ̣ / ᚦ̣.
-
-  - ᛫ U+16EB RUNIC SINGLE PUNCTUATION
-
-  - ᚠ U+16A0 RUNIC LETTER FEHU FEOH FE F
-  - ᚢ U+16A2 RUNIC LETTER URUZ UR U
-  - ᚣ U+16A3 RUNIC LETTER YR
-  - ᚦ U+16A6 RUNIC LETTER THURISAZ THURS THORN
-  - ᚩ U+16A9 RUNIC LETTER OS O
-  - ᚪ U+16AA RUNIC LETTER AC A
-  - ᚫ U+16AB RUNIC LETTER AESC
-  - ᚱ U+16B1 RUNIC LETTER RAIDO RAD REID R
-  - ᚲ U+16B2 RUNIC LETTER KAUNA
-  - ᚳ U+16B3 RUNIC LETTER CEN
-  - ᚴ U+16B4 RUNIC LETTER KAUN K
-  - ᚷ U+16B7 RUNIC LETTER GEBO GYFU G
-  - ᚸ U+16B8 RUNIC LETTER GAR
-  - ᚹ U+16B9 RUNIC LETTER WUNJO WYNN W
-  - ᚻ U+16BB RUNIC LETTER HAEGL H
-  - ᚾ U+16BE RUNIC LETTER NAUDIZ NYD NAUD N
-  - ᛁ U+16C1 RUNIC LETTER ISAZ IS ISS I
-  - ᛇ U+16C7 RUNIC LETTER IWAZ EOH
-  - ᛈ U+16C8 RUNIC LETTER PERTHO PEORTH P
-  - ᛉ U+16C9 RUNIC LETTER ALGIZ EOLHX
-  - ᛊ U+16CA RUNIC LETTER SOWILO S
-  - ᛋ U+16CB RUNIC LETTER SIGEL LONG-BRANCH-SOL S
-  - ᛏ U+16CF RUNIC LETTER TIWAZ TIR TYR T
-  - ᛒ U+16D2 RUNIC LETTER BERKANAN BEORC BJARKAN B
-  - ᛖ U+16D6 RUNIC LETTER EHWAZ EH E
-  - ᛗ U+16D7 RUNIC LETTER MANNAZ MAN M
-  - ᛚ U+16DA RUNIC LETTER LAUKAZ LAGU LOGR L
-  - ᛜ U+16DC RUNIC LETTER INGWAZ
-  - ᛝ U+16DD RUNIC LETTER ING
-  - ᛞ U+16DE RUNIC LETTER DAGAZ DAEG D
-  - ᛟ U+16DF RUNIC LETTER OTHALAN ETHEL O
-  - ᛡ U+16E1 RUNIC LETTER IOR
-  - ᛣ U+16E3 RUNIC LETTER CALC
-
-  ### Elder Futhark (24): standard fuþark row in Unicode
-
-  Order (one inscriptional convention; Charje sounds are not the same as historical letter values):
-  ᚠ ᚢ ᚦ ᚨ ᚱ ᚲ ᚷ ᚹ ᚻ ᚾ ᛁ ᛇ ᛈ ᛉ ᛊ ᛏ ᛒ ᛖ ᛗ ᛚ ᛜ ᛞ ᚪ ᛟ
-
-  Names (common Germanic runology labels, for orientation): Fehu, Uruz, Thurisaz,
-  Ansuz, Raido, Kaunan, Gebo, Wunjo, Hagalaz, Naudiz, Isaz, Eihwaz, Perthro,
-  Algiz, Sowilo, Tiwaz, Berkano, Ehwaz, Mannaz, Laguz, Ingwaz, Dagaz, Ac,
-  Othala.
-
-  Charje reuses these code points for English phonetics; decode using the Charje
-  table above, not historical *Runic letter …* meanings alone.
-
-  - If a token is already in Latin (e.g. preserve_terms), leave it unchanged.
+  Notes:
+  - The combining dot below (U+0323) can be omitted from ᚠ̣ and ᚦ̣ if the word would not be a homograph, the diacritic should be kept on ᚠ̣ at the beginning of a word regardless if it is a homograph or not; examples: ᚦᚫᛏ (that), ᛖᚠᛟᚱ (ever), ᚻᚫᚠ (half), ᚻᚫᚠ̣ (have), ᛏᛁᚷᚦ (teeth), ᛏᛁᚷᚦ̣ (teethe), ᚠ̣ᛖᚱᛁᚷᛟᛋ (various).
+  - If a token is already in Latin script (e.g. preserve_terms), leave it unchanged.
   - If you would output [SKIP], return exactly [SKIP].
