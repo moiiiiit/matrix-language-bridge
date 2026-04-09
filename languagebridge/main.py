@@ -157,7 +157,13 @@ async def main() -> None:
                 sys.exit(1)
             logger.warning("Matrix token check failed (%s). Trying password login.", e)
             try:
-                await client.login(password=matrix_password)
+                login_kwargs: dict[str, str] = {"password": matrix_password}
+                # Reuse previous device ID from crypto store if present, so E2EE keys remain valid.
+                if e2ee_stack is not None:
+                    stored_device_id = await e2ee_stack.crypto_store.get_device_id()
+                    if stored_device_id:
+                        login_kwargs["device_id"] = str(stored_device_id)
+                await client.login(**login_kwargs)
                 whoami = await client.whoami()
                 logger.info("Connected to Matrix via password login as %s", whoami.user_id)
             except Exception as login_error:
