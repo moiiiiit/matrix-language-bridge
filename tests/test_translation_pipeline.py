@@ -476,3 +476,32 @@ async def test_uses_cached_translation_on_repeat_text(storage: MemoryStorage) ->
     # Second call should hit cache and avoid provider.
     assert len(prov.calls) == 1
     assert send.await_count == 2
+
+
+@pytest.mark.asyncio
+async def test_preprocess_profile_skip_retries_with_no_skip_appendix(storage: MemoryStorage) -> None:
+    cfg = _config(
+        profile=TranslationProfile(
+            id="charje_english_runes",
+            target_language="en",
+            reply_target_label="en",
+            prompt_appendix="CHARJE",
+            preprocess=PreprocessConfig(
+                kind="runes_to_phonetic",
+                twin_map="languagebridge/profiles/charje_maps/twin.json",
+                lone_map="languagebridge/profiles/charje_maps/lone.json",
+            ),
+        )
+    )
+    send = AsyncMock()
+    prov = ListProvider(["[SKIP]", "how"])
+    with patch(
+        "languagebridge.translation.detect_language",
+        return_value=DetectionResult("unknown", 0.0),
+    ):
+        await handle_message(
+            ROOM, "$3", "@u:matrix.org", "ᚻᚫᚢ", cfg, prov, storage, send
+        )
+    assert len(prov.calls) == 2
+    assert "do not output [SKIP]" in prov.calls[1][1].prompt_appendix
+    send.assert_awaited_once()

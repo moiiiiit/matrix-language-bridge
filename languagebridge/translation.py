@@ -170,7 +170,12 @@ def _should_skip(profile: Any, original_text: str, decision: MessageDecision) ->
 
 
 async def _translate_with_retry(
-    provider: TranslationProvider, text_for_translation: str, context: TranslationContext, profile: Any, normalized_detected: str
+    provider: TranslationProvider,
+    text_for_translation: str,
+    context: TranslationContext,
+    profile: Any,
+    normalized_detected: str,
+    force_retry_on_skip: bool = False,
 ) -> str | None:
     try:
         result = await provider.translate(text_for_translation, context)
@@ -182,10 +187,13 @@ async def _translate_with_retry(
         return result
 
     logger.debug("Provider requested SKIP")
-    should_retry = profile.bidirectional_with and normalized_detected in {
-        profile.target_language,
-        profile.bidirectional_with,
-    }
+    should_retry = force_retry_on_skip or (
+        profile.bidirectional_with
+        and normalized_detected in {
+            profile.target_language,
+            profile.bidirectional_with,
+        }
+    )
     if not should_retry:
         return None
 
@@ -281,7 +289,12 @@ async def handle_message(
         logger.debug("Translation cache miss profile=%s room=%s", profile.id, room_id)
         # 9. Call LLM
         result = await _translate_with_retry(
-            provider, text_for_translation, context, profile, decision.normalized_detected
+            provider,
+            text_for_translation,
+            context,
+            profile,
+            decision.normalized_detected,
+            force_retry_on_skip=decision.preprocess_applied,
         )
         if result is None:
             await storage.mark_processed(event_id, str(room_id))
