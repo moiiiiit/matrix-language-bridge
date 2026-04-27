@@ -2,6 +2,8 @@
 
 import logging
 import re
+from dataclasses import dataclass
+from typing import Any
 
 from mautrix.types import EventType, MessageType, RoomID, TextMessageEventContent
 
@@ -72,6 +74,118 @@ def _effective_target_language(profile, detected_language: str) -> str:
     return profile.target_language
 
 
+@dataclass
+class MessageDecision:
+    profile: Any
+    text_for_translation: str
+    preprocess_applied: bool
+    detection: Any
+    normalized_detected: str
+    effective_target: str
+
+
+def _prepare_message(profile: Any, text: str) -> tuple[str, bool]:
+    preprocessed_text, preprocess_applied = apply_preprocess(text, profile.preprocess)
+    if preprocess_applied:
+        logger.debug("Applied preprocess for profile=%s: %r -> %r", profile.id, text[:80], preprocessed_text[:80])
+    return (preprocessed_text if preprocess_applied else text), preprocess_applied
+
+
+def _decide_translation(profile: Any, original_text: str, text_for_translation: str, preprocess_applied: bool) -> MessageDecision:
+    detection = detect_language(text_for_translation)
+    normalized_detected = _normalized_detected_language(
+        profile, detection.language_code, text_for_translation, detection.confidence
+    )
+    effective_target = _effective_target_language(profile, normalized_detected)
+    logger.debug(
+        (
+            "Original message=%r | detected=%s confidence=%.2f | "
+            "profile=%s bidirectional=%s from=%s to=%s"
+        ),
+        original_text[:160],
+        detection.language_code,
+        detection.confidence,
+        profile.id,
+        bool(profile.bidirectional_with),
+        normalized_detected,
+        effective_target,
+    )
+    logger.debug(
+        "Selected profile '%s' for room target=%s detected=%s normalized=%s effective_target=%s",
+        profile.id,
+        profile.target_language,
+        detection.language_code,
+        normalized_detected,
+        effective_target,
+    )
+    return MessageDecision(
+        profile=profile,
+        text_for_translation=text_for_translation,
+        preprocess_applied=preprocess_applied,
+        detection=detection,
+        normalized_detected=normalized_detected,
+        effective_target=effective_target,
+    )
+
+
+def _should_skip(profile: Any, original_text: str, decision: MessageDecision) -> bool:
+    if profile.id == "charje_english_runes" and not decision.preprocess_applied and not _looks_like_charje_runes(
+        original_text
+    ):
+        return True
+    if (
+        not decision.preprocess_applied
+        and decision.detection.language_code == decision.effective_target
+        and decision.detection.confidence > 0.7
+    ):
+        return True
+    word_count = len(decision.text_for_translation.split())
+    if word_count < 3 and not _has_non_ascii(decision.text_for_translation):
+        return True
+    return False
+
+
+async def _translate_with_retry(
+    provider: TranslationProvider, text_for_translation: str, context: TranslationContext, profile: Any, normalized_detected: str
+) -> str | None:
+    try:
+        result = await provider.translate(text_for_translation, context)
+    except Exception:
+        logger.exception("Translation provider error")
+        return None
+
+    if result.strip() != "[SKIP]":
+        return result
+
+    logger.debug("Provider requested SKIP")
+    should_retry = profile.bidirectional_with and normalized_detected in {
+        profile.target_language,
+        profile.bidirectional_with,
+    }
+    if not should_retry:
+        return None
+
+    retry_context = TranslationContext(
+        family_name=context.family_name,
+        source_language_hint=context.source_language_hint,
+        target_language=context.target_language,
+        preserve_terms=context.preserve_terms,
+        dialect=context.dialect,
+        tone=context.tone,
+        prompt_appendix=(
+            f"{context.prompt_appendix}\n"
+            "For this message, do not output [SKIP]. Translate to the target language."
+        ),
+    )
+    try:
+        result = await provider.translate(text_for_translation, retry_context)
+        logger.debug("Retry translation result: %s", result[:80])
+    except Exception:
+        logger.exception("Retry translation provider error")
+        return None
+    return None if result.strip() == "[SKIP]" else result
+
+
 async def handle_message(
     room_id: RoomID,
     event_id: str,
@@ -110,122 +224,39 @@ async def handle_message(
         return
 
     profile = config.profile_for_room(str(room_id))
-    preprocessed_text, preprocess_applied = apply_preprocess(text, profile.preprocess)
-    if preprocess_applied:
-        logger.debug("Applied preprocess for profile=%s: %r -> %r", profile.id, text[:80], preprocessed_text[:80])
+    text_for_translation, preprocess_applied = _prepare_message(profile, text)
+    decision = _decide_translation(profile, text, text_for_translation, preprocess_applied)
 
-    text_for_translation = preprocessed_text if preprocess_applied else text
-
-    # 5. Language detection
-    detection = detect_language(text_for_translation)
-    normalized_detected = _normalized_detected_language(
-        profile, detection.language_code, text_for_translation, detection.confidence
-    )
-    effective_target = _effective_target_language(profile, normalized_detected)
-    translation_from = normalized_detected
-    translation_to = effective_target
-    logger.debug(
-        (
-            "Original message=%r | detected=%s confidence=%.2f | "
-            "profile=%s bidirectional=%s from=%s to=%s"
-        ),
-        text[:160],
-        detection.language_code,
-        detection.confidence,
-        profile.id,
-        bool(profile.bidirectional_with),
-        translation_from,
-        translation_to,
-    )
-    logger.debug(
-        "Selected profile '%s' for room=%s target=%s detected=%s normalized=%s effective_target=%s",
-        profile.id,
-        room_id,
-        profile.target_language,
-        detection.language_code,
-        normalized_detected,
-        effective_target,
-    )
-
-    # Charje room is decode-only for rune input unless profile preprocessing handled it.
-    if profile.id == "charje_english_runes" and not preprocess_applied and not _looks_like_charje_runes(text):
-        logger.debug("Skipping non-rune input for charje profile event_id=%s", event_id)
-        await storage.mark_processed(event_id, str(room_id))
-        return
-
-    # 6. Skip if already in target language with high confidence
-    if (
-        not preprocess_applied
-        and
-        detection.language_code == effective_target
-        and detection.confidence > 0.7
-    ):
-        logger.debug("Skipping already-target-language event_id=%s", event_id)
-        await storage.mark_processed(event_id, str(room_id))
-        return
-
-    # 7. Skip very short text without non-ASCII characters
-    word_count = len(text_for_translation.split())
-    if word_count < 3 and not _has_non_ascii(text_for_translation):
-        logger.debug("Skipping short low-signal text event_id=%s", event_id)
+    if _should_skip(profile, text, decision):
+        logger.debug("Skipping message after decision checks event_id=%s", event_id)
         await storage.mark_processed(event_id, str(room_id))
         return
 
     # 8. Build translation context
     context = TranslationContext(
         family_name=config.family.name,
-        source_language_hint=normalized_detected,
-        target_language=effective_target,
+        source_language_hint=decision.normalized_detected,
+        target_language=decision.effective_target,
         prompt_appendix=profile.prompt_appendix,
         preserve_terms=profile.preserve_terms or config.family.preserve_terms,
         dialect=profile.dialect or config.family.dialect,
     )
 
     # 9. Call LLM
-    try:
-        result = await provider.translate(text_for_translation, context)
-    except Exception:
-        logger.exception("Translation provider error")
+    result = await _translate_with_retry(
+        provider, text_for_translation, context, profile, decision.normalized_detected
+    )
+    if result is None:
         await storage.mark_processed(event_id, str(room_id))
         return
 
-    if result.strip() == "[SKIP]":
-        logger.debug("Provider requested SKIP for event_id=%s", event_id)
-        # For bidirectional profiles, force one retry with explicit no-SKIP instruction.
-        should_retry = profile.bidirectional_with and normalized_detected in {
-            profile.target_language,
-            profile.bidirectional_with,
-        }
-        if should_retry:
-            retry_context = TranslationContext(
-                family_name=context.family_name,
-                source_language_hint=context.source_language_hint,
-                target_language=context.target_language,
-                preserve_terms=context.preserve_terms,
-                dialect=context.dialect,
-                tone=context.tone,
-                prompt_appendix=(
-                    f"{context.prompt_appendix}\n"
-                    "For this message, do not output [SKIP]. Translate to the target language."
-                ),
-            )
-            try:
-                result = await provider.translate(text_for_translation, retry_context)
-                logger.debug("Retry translation result for event_id=%s: %s", event_id, result[:80])
-            except Exception:
-                logger.exception("Retry translation provider error")
-                await storage.mark_processed(event_id, str(room_id))
-                return
-            if result.strip() == "[SKIP]":
-                await storage.mark_processed(event_id, str(room_id))
-                return
-        else:
-            await storage.mark_processed(event_id, str(room_id))
-            return
-
     # 10. Format reply
-    source_lang = detection.language_code if detection.language_code != "unknown" else "?"
-    tgt_label = effective_target if profile.bidirectional_with else profile.reply_target_label
+    source_lang = (
+        decision.detection.language_code if decision.detection.language_code != "unknown" else "?"
+    )
+    tgt_label = (
+        decision.effective_target if profile.bidirectional_with else profile.reply_target_label
+    )
     reply_text = f"\U0001f310 [{source_lang} \u2192 {tgt_label}] {result}"
 
     # 11. Send reply
