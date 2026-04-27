@@ -479,7 +479,9 @@ async def test_uses_cached_translation_on_repeat_text(storage: MemoryStorage) ->
 
 
 @pytest.mark.asyncio
-async def test_preprocess_profile_skip_retries_with_no_skip_appendix(storage: MemoryStorage) -> None:
+async def test_preprocess_profile_translates_directly_without_skip_flow(
+    storage: MemoryStorage,
+) -> None:
     cfg = _config(
         profile=TranslationProfile(
             id="charje_english_runes",
@@ -494,14 +496,43 @@ async def test_preprocess_profile_skip_retries_with_no_skip_appendix(storage: Me
         )
     )
     send = AsyncMock()
-    prov = ListProvider(["[SKIP]", "how"])
+    prov = ListProvider(["how"])
     with patch(
         "languagebridge.translation.detect_language",
         return_value=DetectionResult("unknown", 0.0),
     ):
-        await handle_message(
-            ROOM, "$3", "@u:matrix.org", "ᚻᚫᚢ", cfg, prov, storage, send
-        )
-    assert len(prov.calls) == 2
-    assert "do not output [SKIP]" in prov.calls[1][1].prompt_appendix
+        await handle_message(ROOM, "$3", "@u:matrix.org", "ᚻᚫᚢ", cfg, prov, storage, send)
+    assert len(prov.calls) == 1
+    assert "do not output [SKIP]" in prov.calls[0][1].prompt_appendix
     send.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_preprocess_profile_double_skip_falls_back_to_preprocessed_text(
+    storage: MemoryStorage,
+) -> None:
+    cfg = _config(
+        profile=TranslationProfile(
+            id="charje_english_runes",
+            target_language="en",
+            reply_target_label="en",
+            prompt_appendix="CHARJE",
+            preprocess=PreprocessConfig(
+                kind="runes_to_phonetic",
+                twin_map="languagebridge/profiles/charje_maps/twin.json",
+                lone_map="languagebridge/profiles/charje_maps/lone.json",
+            ),
+        )
+    )
+    send = AsyncMock()
+    prov = ListProvider(["[SKIP]"])
+    with patch(
+        "languagebridge.translation.detect_language",
+        return_value=DetectionResult("unknown", 0.0),
+    ):
+        await handle_message(ROOM, "$4", "@u:matrix.org", "ᚻᚫᚢ", cfg, prov, storage, send)
+    send.assert_awaited_once()
+    reply_text = send.await_args[0][2]
+    assert "[SKIP]" not in reply_text
+
+

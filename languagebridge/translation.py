@@ -175,7 +175,6 @@ async def _translate_with_retry(
     context: TranslationContext,
     profile: Any,
     normalized_detected: str,
-    force_retry_on_skip: bool = False,
 ) -> str | None:
     try:
         result = await provider.translate(text_for_translation, context)
@@ -187,13 +186,10 @@ async def _translate_with_retry(
         return result
 
     logger.debug("Provider requested SKIP")
-    should_retry = force_retry_on_skip or (
-        profile.bidirectional_with
-        and normalized_detected in {
-            profile.target_language,
-            profile.bidirectional_with,
-        }
-    )
+    should_retry = profile.bidirectional_with and normalized_detected in {
+        profile.target_language,
+        profile.bidirectional_with,
+    }
     if not should_retry:
         return None
 
@@ -215,7 +211,34 @@ async def _translate_with_retry(
     except Exception:
         logger.exception("Retry translation provider error")
         return None
-    return None if result.strip() == "[SKIP]" else result
+    if result.strip() == "[SKIP]":
+        return None
+    return result
+
+
+async def _translate_preprocess_only(
+    provider: TranslationProvider, text_for_translation: str, context: TranslationContext
+) -> str | None:
+    non_skip_context = TranslationContext(
+        family_name=context.family_name,
+        source_language_hint=context.source_language_hint,
+        target_language=context.target_language,
+        preserve_terms=context.preserve_terms,
+        dialect=context.dialect,
+        tone=context.tone,
+        prompt_appendix=(
+            f"{context.prompt_appendix}\n"
+            "Preprocessed input mode: translate this input directly and do not output [SKIP]."
+        ),
+    )
+    try:
+        result = await provider.translate(text_for_translation, non_skip_context)
+    except Exception:
+        logger.exception("Translation provider error (preprocess mode)")
+        return None
+    if result.strip() == "[SKIP]":
+        return text_for_translation
+    return result
 
 
 async def handle_message(
@@ -288,14 +311,16 @@ async def handle_message(
     else:
         logger.debug("Translation cache miss profile=%s room=%s", profile.id, room_id)
         # 9. Call LLM
-        result = await _translate_with_retry(
-            provider,
-            text_for_translation,
-            context,
-            profile,
-            decision.normalized_detected,
-            force_retry_on_skip=decision.preprocess_applied,
-        )
+        if decision.preprocess_applied:
+            result = await _translate_preprocess_only(provider, text_for_translation, context)
+        else:
+            result = await _translate_with_retry(
+                provider,
+                text_for_translation,
+                context,
+                profile,
+                decision.normalized_detected,
+            )
         if result is None:
             await storage.mark_processed(event_id, str(room_id))
             return
