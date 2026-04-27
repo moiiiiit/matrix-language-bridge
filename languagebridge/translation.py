@@ -210,7 +210,7 @@ async def handle_message(
                 ),
             )
             try:
-                result = await provider.translate(text, retry_context)
+                result = await provider.translate(text_for_translation, retry_context)
                 logger.debug("Retry translation result for event_id=%s: %s", event_id, result[:80])
             except Exception:
                 logger.exception("Retry translation provider error")
