@@ -29,7 +29,7 @@ class Storage:
     async def open(self) -> None:
         Path(self._db_path).parent.mkdir(parents=True, exist_ok=True)
         self._db = await aiosqlite.connect(self._db_path)
-        await self._db.execute(_SCHEMA)
+        await self._db.executescript(_SCHEMA)
         await self._db.commit()
 
     async def close(self) -> None:
