@@ -139,6 +139,10 @@ def _should_skip(profile: Any, original_text: str, decision: MessageDecision) ->
         and decision.detection.confidence > 0.7
     ):
         return True
+    # Allow short messages for profiles that explicitly opted into preprocessing
+    # (e.g. rune -> phonetic -> translation can be meaningful even as one word).
+    if decision.preprocess_applied:
+        return False
     word_count = len(decision.text_for_translation.split())
     if word_count < 3 and not _has_non_ascii(decision.text_for_translation):
         return True
