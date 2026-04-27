@@ -10,6 +10,7 @@ from languagebridge.config import (
     FamilyConfig,
     LLMConfig,
     MatrixConfig,
+    PreprocessConfig,
     TranslationProfile,
     UIConfig,
 )
@@ -422,6 +423,11 @@ async def test_charje_decodes_rune_input_to_english(storage: MemoryStorage) -> N
             target_language="en",
             reply_target_label="en",
             prompt_appendix="CHARJE",
+            preprocess=PreprocessConfig(
+                kind="runes_to_phonetic",
+                twin_map="languagebridge/profiles/charje_maps/twin.json",
+                lone_map="languagebridge/profiles/charje_maps/lone.json",
+            ),
         )
     )
     prov = ListProvider(["hello"])
@@ -434,4 +440,5 @@ async def test_charje_decodes_rune_input_to_english(storage: MemoryStorage) -> N
             ROOM, "$1", "@u:matrix.org", "ᚻᛖᛚᛟ", cfg, prov, storage, send
         )
     assert len(prov.calls) == 1
+    assert prov.calls[0][0] != "ᚻᛖᛚᛟ"
     send.assert_awaited_once()

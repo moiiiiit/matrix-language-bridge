@@ -8,6 +8,7 @@ from mautrix.types import EventType, MessageType, RoomID, TextMessageEventConten
 from languagebridge.config import Config
 from languagebridge.detection import detect_language
 from languagebridge.llm.base import TranslationContext, TranslationProvider
+from languagebridge.preprocess import apply_preprocess
 from languagebridge.storage import Storage
 
 logger = logging.getLogger(__name__)
@@ -108,11 +109,17 @@ async def handle_message(
         logger.debug("Skipping empty/whitespace message event_id=%s", event_id)
         return
 
-    # 5. Language detection
-    detection = detect_language(text)
     profile = config.profile_for_room(str(room_id))
+    preprocessed_text, preprocess_applied = apply_preprocess(text, profile.preprocess)
+    if preprocess_applied:
+        logger.debug("Applied preprocess for profile=%s: %r -> %r", profile.id, text[:80], preprocessed_text[:80])
+
+    text_for_translation = preprocessed_text if preprocess_applied else text
+
+    # 5. Language detection
+    detection = detect_language(text_for_translation)
     normalized_detected = _normalized_detected_language(
-        profile, detection.language_code, text, detection.confidence
+        profile, detection.language_code, text_for_translation, detection.confidence
     )
     effective_target = _effective_target_language(profile, normalized_detected)
     translation_from = normalized_detected
@@ -140,14 +147,16 @@ async def handle_message(
         effective_target,
     )
 
-    # Charje room is decode-only: translate runes to English.
-    if profile.id == "charje_english_runes" and not _looks_like_charje_runes(text):
+    # Charje room is decode-only for rune input unless profile preprocessing handled it.
+    if profile.id == "charje_english_runes" and not preprocess_applied and not _looks_like_charje_runes(text):
         logger.debug("Skipping non-rune input for charje profile event_id=%s", event_id)
         await storage.mark_processed(event_id, str(room_id))
         return
 
     # 6. Skip if already in target language with high confidence
     if (
+        not preprocess_applied
+        and
         detection.language_code == effective_target
         and detection.confidence > 0.7
     ):
@@ -156,8 +165,8 @@ async def handle_message(
         return
 
     # 7. Skip very short text without non-ASCII characters
-    word_count = len(text.split())
-    if word_count < 3 and not _has_non_ascii(text):
+    word_count = len(text_for_translation.split())
+    if word_count < 3 and not _has_non_ascii(text_for_translation):
         logger.debug("Skipping short low-signal text event_id=%s", event_id)
         await storage.mark_processed(event_id, str(room_id))
         return
@@ -174,7 +183,7 @@ async def handle_message(
 
     # 9. Call LLM
     try:
-        result = await provider.translate(text, context)
+        result = await provider.translate(text_for_translation, context)
     except Exception:
         logger.exception("Translation provider error")
         await storage.mark_processed(event_id, str(room_id))

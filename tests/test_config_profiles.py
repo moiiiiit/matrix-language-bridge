@@ -45,8 +45,10 @@ def test_loads_builtin_charje_profile(tmp_path: Path) -> None:
     assert cfg.default_profile.target_language == "en"
     assert cfg.default_profile.dialect == "American English"
     assert cfg.default_profile.preserve_terms == []
-    assert "Charje" in cfg.default_profile.prompt_appendix
-    assert "American English" in cfg.default_profile.prompt_appendix
+    assert cfg.default_profile.preprocess is not None
+    assert cfg.default_profile.preprocess.kind == "runes_to_phonetic"
+    assert "charje_maps/twin.json" in cfg.default_profile.preprocess.twin_map
+    assert "phonetic text" in cfg.default_profile.prompt_appendix
 
 
 def test_loads_profile_from_absolute_path(tmp_path: Path) -> None:

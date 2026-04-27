@@ -59,6 +59,14 @@ class UIConfig(BaseModel):
     subtle_use_small: bool = True
 
 
+class PreprocessConfig(BaseModel):
+    kind: Literal["runes_to_phonetic"]
+    twin_map: str = "maps/twin.json"
+    lone_map: str = "maps/lone.json"
+    rune_threshold: float = 0.6
+    word_separator: str = "᛫"
+
+
 class TranslationProfile(BaseModel):
     id: str
     target_language: str
@@ -67,6 +75,7 @@ class TranslationProfile(BaseModel):
     prompt_appendix: str = ""
     dialect: str | None = None
     preserve_terms: list[str] = Field(default_factory=list)
+    preprocess: PreprocessConfig | None = None
 
 
 class Config(BaseModel):
