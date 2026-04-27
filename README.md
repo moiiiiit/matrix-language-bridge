@@ -190,9 +190,18 @@ You can also override by room with `family.room_profiles` (`room_id -> profile`)
 | ----------------- | --------- | ------- | ------------------------------------------------------ |
 | `target_language` | string    | required| Target language code for this profile (e.g. `en`)     |
 | `reply_target_label` | string | required| Label shown in replies (`[mr → en]`)                  |
+| `bidirectional_with` | string | `null`  | Optional reverse language code for two-way profiles    |
 | `dialect`         | string    | `null`  | Optional dialect hint used in translation prompting    |
 | `preserve_terms`  | list[str] | `[]`    | Terms that should never be translated                  |
 | `prompt_appendix` | string    | `""`    | Profile-specific prompting instructions                |
+| `preprocess`      | object    | `null`  | Optional deterministic preprocessing before LLM        |
+
+`preprocess` supports:
+
+- `kind: runes_to_phonetic` — runic input to phonetic text conversion
+- `twin_map` / `lone_map` — JSON map paths used by the preprocessor
+- `rune_threshold` — fraction of runic chars required to activate preprocessing
+- `word_separator` — rune char that should map to spaces (default `᛫`)
 
 ### `llm`
 
@@ -261,14 +270,25 @@ Use Docker targets for runtime and tests:
 
 ## How It Works
 
-1. LanguageBridge connects to your Matrix homeserver and monitors configured rooms
-2. When a new text message arrives, lingua-py detects its language
-3. If the message isn't in the target language, it's sent to your configured LLM with a carefully crafted prompt that:
-   - Handles romanized Indic text and code-switching
-   - Preserves family terms (kaka, aai, baba, etc.)
-   - Maintains casual tone
-   - Skips messages that don't need translation (already in target language, emojis, "ok", etc.)
-4. The translation is posted as a threaded reply: `🌐 [mr → en] How are you, kaka?`
+### Runtime pipeline
+
+1. LanguageBridge connects to your Matrix homeserver and monitors configured rooms.
+2. Incoming messages are filtered (own messages, duplicates, room scope, empty text).
+3. The selected room/profile can optionally run deterministic preprocessing first (e.g. Charje runes -> phonetic text).
+4. Language detection runs on the preprocessed text (or original text when no preprocess is enabled).
+5. Skip heuristics run (target-language high confidence, low-signal short text, etc.), with preprocess-aware behavior.
+6. A profile-aware translation cache is checked before any LLM call.
+7. On cache miss, the LLM is called with profile prompt context and translation direction.
+8. The final translation is sent as a threaded reply: `🌐 [mr → en] How are you, kaka?`
+9. Event IDs are marked processed; translation results are cached for future identical inputs.
+
+### Architecture notes
+
+- **Profile-driven behavior**: Profile YAML controls direction, prompting, dialect hints, preserved terms, and optional preprocessing.
+- **Preprocess layer**: Deterministic transforms can normalize special scripts before LLM usage (Charje maps in `languagebridge/profiles/charje_maps/`).
+- **Cache layer**: Exact translation cache is persisted in SQLite (`translation_cache` table) to avoid repeated token spend.
+  - Cache key includes profile, translation direction, prompt hash, and normalized input text.
+- **Storage layer**: SQLite stores both processed event IDs and cached translation outputs.
 
 ## Contributing
 
