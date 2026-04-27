@@ -2,6 +2,7 @@
 
 import logging
 import re
+import hashlib
 from dataclasses import dataclass
 from typing import Any
 
@@ -82,6 +83,25 @@ class MessageDecision:
     detection: Any
     normalized_detected: str
     effective_target: str
+
+
+def _translation_cache_key(
+    profile_id: str,
+    text_for_translation: str,
+    source_language_hint: str,
+    target_language: str,
+    prompt_appendix: str,
+) -> str:
+    prompt_version = hashlib.sha256(prompt_appendix.encode("utf-8")).hexdigest()[:16]
+    return "|".join(
+        [
+            profile_id,
+            source_language_hint,
+            target_language,
+            prompt_version,
+            text_for_translation.strip(),
+        ]
+    )
 
 
 def _prepare_message(profile: Any, text: str) -> tuple[str, bool]:
@@ -246,13 +266,27 @@ async def handle_message(
         dialect=profile.dialect or config.family.dialect,
     )
 
-    # 9. Call LLM
-    result = await _translate_with_retry(
-        provider, text_for_translation, context, profile, decision.normalized_detected
+    cache_key = _translation_cache_key(
+        profile.id,
+        text_for_translation,
+        context.source_language_hint,
+        context.target_language,
+        context.prompt_appendix,
     )
-    if result is None:
-        await storage.mark_processed(event_id, str(room_id))
-        return
+    cached = await storage.get_cached_translation(cache_key)
+    if cached is not None:
+        logger.info("Translation cache hit profile=%s room=%s", profile.id, room_id)
+        result = cached
+    else:
+        logger.debug("Translation cache miss profile=%s room=%s", profile.id, room_id)
+        # 9. Call LLM
+        result = await _translate_with_retry(
+            provider, text_for_translation, context, profile, decision.normalized_detected
+        )
+        if result is None:
+            await storage.mark_processed(event_id, str(room_id))
+            return
+        await storage.set_cached_translation(cache_key, result)
 
     # 10. Format reply
     source_lang = (

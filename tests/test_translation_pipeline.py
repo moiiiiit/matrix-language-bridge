@@ -57,6 +57,7 @@ class MemoryStorage:
     def __init__(self) -> None:
         self.processed: set[str] = set()
         self.mark_calls: list[tuple[str, str]] = []
+        self.translation_cache: dict[str, str] = {}
 
     async def is_processed(self, event_id: str) -> bool:
         return event_id in self.processed
@@ -64,6 +65,12 @@ class MemoryStorage:
     async def mark_processed(self, event_id: str, room_str: str) -> None:
         self.processed.add(event_id)
         self.mark_calls.append((event_id, room_str))
+
+    async def get_cached_translation(self, cache_key: str) -> str | None:
+        return self.translation_cache.get(cache_key)
+
+    async def set_cached_translation(self, cache_key: str, translated_text: str) -> None:
+        self.translation_cache[cache_key] = translated_text
 
 
 class ListProvider(TranslationProvider):
@@ -442,3 +449,30 @@ async def test_charje_decodes_rune_input_to_english(storage: MemoryStorage) -> N
     assert len(prov.calls) == 1
     assert prov.calls[0][0] != "ᚻᛖᛚᛟ"
     send.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_uses_cached_translation_on_repeat_text(storage: MemoryStorage) -> None:
+    cfg = _config(
+        profile=TranslationProfile(
+            id="p",
+            target_language="en",
+            reply_target_label="English",
+            prompt_appendix="APPX",
+        )
+    )
+    send = AsyncMock()
+    prov = ListProvider(["Bonjour", "unused"])
+    with patch(
+        "languagebridge.translation.detect_language",
+        return_value=DetectionResult("fr", 0.9),
+    ):
+        await handle_message(
+            ROOM, "$1", "@u:matrix.org", "hello world here", cfg, prov, storage, send
+        )
+        await handle_message(
+            ROOM, "$2", "@u:matrix.org", "hello world here", cfg, prov, storage, send
+        )
+    # Second call should hit cache and avoid provider.
+    assert len(prov.calls) == 1
+    assert send.await_count == 2

@@ -11,6 +11,13 @@ CREATE TABLE IF NOT EXISTS processed_events (
     room_id  TEXT NOT NULL,
     processed_at INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS translation_cache (
+    cache_key TEXT PRIMARY KEY,
+    translated_text TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    hit_count INTEGER NOT NULL DEFAULT 0
+);
 """
 
 
@@ -50,5 +57,38 @@ class Storage:
         cutoff = int(time.time()) - (days * 86400)
         await self._db.execute(
             "DELETE FROM processed_events WHERE processed_at < ?", (cutoff,)
+        )
+        await self._db.execute(
+            "DELETE FROM translation_cache WHERE created_at < ?", (cutoff,)
+        )
+        await self._db.commit()
+
+    async def get_cached_translation(self, cache_key: str) -> str | None:
+        assert self._db is not None
+        cursor = await self._db.execute(
+            "SELECT translated_text FROM translation_cache WHERE cache_key = ?",
+            (cache_key,),
+        )
+        row = await cursor.fetchone()
+        if row is None:
+            return None
+        await self._db.execute(
+            "UPDATE translation_cache SET hit_count = hit_count + 1 WHERE cache_key = ?",
+            (cache_key,),
+        )
+        await self._db.commit()
+        return row[0]
+
+    async def set_cached_translation(self, cache_key: str, translated_text: str) -> None:
+        assert self._db is not None
+        await self._db.execute(
+            """
+            INSERT INTO translation_cache (cache_key, translated_text, created_at, hit_count)
+            VALUES (?, ?, ?, 0)
+            ON CONFLICT(cache_key) DO UPDATE SET
+                translated_text = excluded.translated_text,
+                created_at = excluded.created_at
+            """,
+            (cache_key, translated_text, int(time.time())),
         )
         await self._db.commit()
