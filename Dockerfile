@@ -32,6 +32,9 @@ RUN poetry install --with dev --extras e2ee --no-root && rm -rf "$POETRY_CACHE_D
 FROM deps-dev AS test
 COPY languagebridge/ ./languagebridge/
 COPY tests/ ./tests/
+COPY Makefile docker-compose.yml ./
+COPY config/ ./config/
+COPY whatsapp-data/ ./whatsapp-data/
 RUN poetry install --with dev --extras e2ee && rm -rf "$POETRY_CACHE_DIR"
 CMD ["poetry", "run", "pytest", "tests/", "-v", "--tb=short"]
 
