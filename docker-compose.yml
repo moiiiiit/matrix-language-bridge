@@ -54,14 +54,14 @@ services:
       - test
 
   # Optional: mautrix-whatsapp bridge ---
-  # Uncomment to bridge your WhatsApp account into Matrix.
   # Full setup guide: https://docs.mau.fi/bridges/go/whatsapp/index.html
-  #
-  # whatsapp:
-  #   image: dock.mau.fi/mautrix/whatsapp:latest
-  #   restart: unless-stopped
-  #   volumes:
-  #     - ./whatsapp-data:/data
+  whatsapp:
+    image: dock.mau.fi/mautrix/whatsapp:latest
+    restart: unless-stopped
+    profiles:
+      - whatsapp
+    volumes:
+      - ./whatsapp-data:/data
 
   # --- Optional: local Ollama (free, private, no API key) ---
   # ollama:

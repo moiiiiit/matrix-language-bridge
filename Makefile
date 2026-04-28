@@ -4,7 +4,7 @@ CONFIG_LOCAL ?= config/config-local.yaml
 
 .PHONY: setup config-from-env test run run-local \
 	docker-build docker-up docker-down docker-restart docker-logs docker-ps docker-test \
-	docker-run-local
+	docker-run-local docker-whatsapp-up docker-whatsapp-down docker-whatsapp-logs
 
 setup:
 	@if [ -f config/config.yaml ]; then \
@@ -51,3 +51,13 @@ docker-logs:
 
 docker-ps:
 	$(COMPOSE) ps
+
+docker-whatsapp-up:
+	mkdir -p whatsapp-data
+	$(COMPOSE) --profile whatsapp up -d whatsapp
+
+docker-whatsapp-down:
+	$(COMPOSE) --profile whatsapp stop whatsapp
+
+docker-whatsapp-logs:
+	$(COMPOSE) --profile whatsapp logs -f whatsapp

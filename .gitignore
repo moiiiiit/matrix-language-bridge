@@ -18,5 +18,10 @@ data/*.db-shm
 data/*.db-wal
 data/*.log
 
+# WhatsApp bridge state/config
+whatsapp-data/
+!whatsapp-data/
+!whatsapp-data/config.example.yaml
+
 # OS files
 .DS_Store
