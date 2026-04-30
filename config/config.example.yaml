@@ -35,6 +35,8 @@ family:
     - "!exampleRoomId:matrix.org"
 
 matrix:
+  # Use your public HTTPS base URL (e.g. https://matrix.example.com). Avoid bare VM IPs:
+  # room IDs and federation use the homeserver domain from Synapse `server_name`, not the IP.
   homeserver_url: "https://matrix.org"
   # Get your access token: Element → Settings → Help & About → Access Token
   access_token: "syt_your_token_here"

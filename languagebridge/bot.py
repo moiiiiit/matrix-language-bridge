@@ -22,6 +22,14 @@ from languagebridge.translation import handle_message
 logger = logging.getLogger(__name__)
 
 
+def _normalize_reaction_emoji(value: str | None) -> str:
+    """Normalize emoji variants (e.g. optional VS16) for robust matching."""
+    if not value:
+        return ""
+    # Some clients send the same emoji with variation selector-16 (U+FE0F).
+    return value.replace("\ufe0f", "")
+
+
 class LanguageBridgeBot:
     def __init__(
         self,
@@ -96,13 +104,27 @@ class LanguageBridgeBot:
     async def _on_reaction(self, evt: ReactionEvent) -> None:
         """Handle reactions — translate when trigger emoji is used in reaction-mode rooms."""
         room_id = str(evt.room_id)
-        if self._config.family.trigger_for_room(room_id) != "reaction":
+        mode = self._config.family.trigger_for_room(room_id)
+        if mode != "reaction":
+            logger.debug("Ignoring reaction in room=%s mode=%s", room_id, mode)
             return
         relates_to = evt.content.relates_to
-        if not relates_to or relates_to.key != self._config.family.reaction_trigger:
+        if not relates_to:
+            logger.debug("Ignoring reaction with empty relates_to room=%s", room_id)
+            return
+        trigger = _normalize_reaction_emoji(self._config.family.reaction_trigger)
+        event_key = _normalize_reaction_emoji(relates_to.key)
+        if event_key != trigger:
+            logger.debug(
+                "Ignoring reaction key mismatch room=%s key=%r trigger=%r",
+                room_id,
+                relates_to.key,
+                self._config.family.reaction_trigger,
+            )
             return
 
         target_event_id = str(relates_to.event_id)
+        logger.info("Reaction trigger matched room=%s event_id=%s", room_id, target_event_id)
 
         # Fetch the original message
         try:
@@ -112,6 +134,12 @@ class LanguageBridgeBot:
             return
 
         if not hasattr(original.content, "body") or not original.content.body:
+            logger.info(
+                "Reaction target has no text body room=%s event_id=%s type=%s",
+                room_id,
+                target_event_id,
+                getattr(original, "type", "unknown"),
+            )
             return
 
         await handle_message(
