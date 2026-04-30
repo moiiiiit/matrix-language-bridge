@@ -9,7 +9,8 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_compose_has_opt_in_whatsapp_service_profile() -> None:
     compose = yaml.safe_load((ROOT / "docker-compose.yml").read_text())
     whatsapp = compose["services"]["whatsapp"]
-    assert whatsapp["image"] == "dock.mau.fi/mautrix/whatsapp:latest"
+    # mau.dev is used because dock.mau.fi intermittently fails DNS from some hosts (e.g. VPS).
+    assert whatsapp["image"] == "dock.mau.dev/mautrix/whatsapp:latest"
     assert "whatsapp" in whatsapp["profiles"]
     assert "./whatsapp-data:/data" in whatsapp["volumes"]
 
