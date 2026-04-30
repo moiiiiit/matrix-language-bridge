@@ -37,20 +37,19 @@ class LanguageBridgeBot:
         self._warned_encrypted_rooms: set[str] = set()
 
     def register_handlers(self) -> None:
-        """Register Matrix event handlers based on trigger_mode."""
-        mode = self._config.family.trigger_mode
+        """Register Matrix event handlers from global trigger_mode plus optional per-room overrides."""
+        fam = self._config.family
+        modes_in_use = {fam.trigger_mode, *fam.room_trigger_modes.values()}
         # Without a crypto machine, m.room.encrypted never becomes plain text — warn once per room.
         if not self._client.crypto_enabled:
             self._client.add_event_handler(EventType.ROOM_ENCRYPTED, self._on_encrypted_message)
 
-        if mode == "auto":
-            self._client.add_event_handler(EventType.ROOM_MESSAGE, self._on_message)
-        elif mode == "reaction":
+        if modes_in_use & {"auto", "command"}:
+            self._client.add_event_handler(EventType.ROOM_MESSAGE, self._on_message_dispatch)
+        if "reaction" in modes_in_use:
             self._client.add_event_handler(EventType.REACTION, self._on_reaction)
-        elif mode == "command":
-            self._client.add_event_handler(EventType.ROOM_MESSAGE, self._on_command)
 
-        logger.info("Registered handlers for trigger_mode=%s", mode)
+        logger.info("Registered handlers for trigger modes in use: %s", sorted(modes_in_use))
 
     async def _on_encrypted_message(self, evt: Any) -> None:
         """Warn once per room that encrypted payloads are not translated."""
@@ -64,7 +63,18 @@ class LanguageBridgeBot:
             room_id,
         )
 
-    async def _on_message(self, evt: MessageEvent) -> None:
+    async def _on_message_dispatch(self, evt: MessageEvent) -> None:
+        """Route room messages by per-room or default trigger mode."""
+        room_id = str(evt.room_id)
+        mode = self._config.family.trigger_for_room(room_id)
+        if mode == "reaction":
+            return
+        if mode == "command":
+            await self._on_command(evt)
+            return
+        await self._on_message_auto(evt)
+
+    async def _on_message_auto(self, evt: MessageEvent) -> None:
         """Handle messages in auto mode — translate every foreign message."""
         if evt.content.msgtype != MessageType.TEXT:
             return
@@ -84,7 +94,10 @@ class LanguageBridgeBot:
         )
 
     async def _on_reaction(self, evt: ReactionEvent) -> None:
-        """Handle reactions in reaction mode — translate when trigger emoji is used."""
+        """Handle reactions — translate when trigger emoji is used in reaction-mode rooms."""
+        room_id = str(evt.room_id)
+        if self._config.family.trigger_for_room(room_id) != "reaction":
+            return
         relates_to = evt.content.relates_to
         if not relates_to or relates_to.key != self._config.family.reaction_trigger:
             return
@@ -118,6 +131,8 @@ class LanguageBridgeBot:
             return
         body = evt.content.body
         if not body:
+            return
+        if self._config.family.trigger_for_room(str(evt.room_id)) != "command":
             return
 
         prefix = self._config.family.command_prefix

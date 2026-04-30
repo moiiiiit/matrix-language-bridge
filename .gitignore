@@ -10,6 +10,7 @@ venv/
 # Config with secrets
 config/config.yaml
 config/config-local.yaml
+config/config-synapse-local-secrets.yaml
 
 # SQLite database
 data/*.db

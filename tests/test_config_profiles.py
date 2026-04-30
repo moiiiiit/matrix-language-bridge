@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from languagebridge.config import load_config
+from languagebridge.config import FamilyConfig, load_config
 
 
 def _write_config(path: Path, profile: str = "default") -> None:
@@ -113,3 +113,13 @@ def test_loads_per_room_profile_mapping(tmp_path: Path) -> None:
     assert per_room.id == "custom"
     assert per_room.target_language == "fr"
     assert fallback.id == "default"
+
+
+def test_family_trigger_for_room_override() -> None:
+    f = FamilyConfig(
+        name="Test",
+        trigger_mode="auto",
+        room_trigger_modes={"!r:example.com": "reaction"},
+    )
+    assert f.trigger_for_room("!r:example.com") == "reaction"
+    assert f.trigger_for_room("!other:example.com") == "auto"

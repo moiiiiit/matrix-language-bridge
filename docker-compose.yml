@@ -56,7 +56,7 @@ services:
   # Optional: mautrix-whatsapp bridge ---
   # Full setup guide: https://docs.mau.fi/bridges/go/whatsapp/index.html
   whatsapp:
-    image: dock.mau.fi/mautrix/whatsapp:latest
+    image: dock.mau.dev/mautrix/whatsapp:latest
     restart: unless-stopped
     profiles:
       - whatsapp
