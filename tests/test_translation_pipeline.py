@@ -155,16 +155,17 @@ async def test_skips_whitespace_only(storage: MemoryStorage) -> None:
 
 
 @pytest.mark.asyncio
-async def test_skips_short_ascii_without_non_ascii(storage: MemoryStorage) -> None:
+async def test_translates_short_ascii_messages(storage: MemoryStorage) -> None:
     cfg = _config()
     send = AsyncMock()
-    prov = ListProvider(["unused"])
+    prov = ListProvider(["salut"])
     with patch(
         "languagebridge.translation.detect_language",
-        return_value=DetectionResult("en", 0.9),
+        return_value=DetectionResult("fr", 0.9),
     ):
         await handle_message(ROOM, "$1", "@u:matrix.org", "a b", cfg, prov, storage, send)
-    assert not prov.calls
+    assert prov.calls
+    send.assert_awaited_once()
     assert ("$1", str(ROOM)) in storage.mark_calls
 
 
@@ -213,8 +214,7 @@ async def test_translates_builds_context_and_sends_reply(storage: MemoryStorage)
     _rid, _eid, reply_text = send.await_args[0]
     assert _rid == ROOM
     assert _eid == "$1"
-    assert "fr" in reply_text
-    assert "English" in reply_text
+    assert reply_text.startswith("🌐 ")
     assert "Bonjour" in reply_text
     assert ("$1", str(ROOM)) in storage.mark_calls
 
@@ -240,7 +240,7 @@ async def test_bidirectional_reply_label_uses_effective_target(storage: MemorySt
             ROOM, "$1", "@u:matrix.org", "hello world here", cfg, prov, storage, send
         )
     reply = send.await_args[0][2]
-    assert "[en → mr]" in reply
+    assert reply.startswith("🌐 ")
     assert "नमस्कार" in reply
 
 
