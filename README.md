@@ -111,6 +111,10 @@ Each bridge runs as a separate service and creates Matrix rooms that mirror your
 
 This repository now includes an optional `whatsapp` Docker Compose profile.
 
+For a full production runbook (Vultr + Synapse + HTTPS + users + appservice registration + QR login + LanguageBridge room policy), see:
+
+- [`docs/vultr-matrix-whatsapp-languagebridge.md`](docs/vultr-matrix-whatsapp-languagebridge.md)
+
 1. Start the bridge container:
 
    ```bash
