@@ -14,6 +14,10 @@ family:
   # room_profiles:
   #   "!abc123:matrix.org": charje_english_runes
 
+  # Optional per-room trigger mode (auto | reaction | command). Unlisted rooms use trigger_mode.
+  # room_trigger_modes:
+  #   "!abc123:matrix.org": reaction
+
   # Translation style settings (dialect, preserve_terms) now live in profile files
   # under languagebridge/profiles/*.yaml.
 
@@ -31,6 +35,8 @@ family:
     - "!exampleRoomId:matrix.org"
 
 matrix:
+  # Use your public HTTPS base URL (e.g. https://matrix.example.com). Avoid bare VM IPs:
+  # room IDs and federation use the homeserver domain from Synapse `server_name`, not the IP.
   homeserver_url: "https://matrix.org"
   # Get your access token: Element → Settings → Help & About → Access Token
   access_token: "syt_your_token_here"

@@ -1,0 +1,27 @@
+# LanguageBridge local config example with WhatsApp bridge rooms.
+# Copy to config/config-local.yaml and replace placeholder values.
+
+family:
+  name: "My Family"
+  profile: default
+  trigger_mode: auto
+  reaction_trigger: "🌐"
+  command_prefix: "!translate"
+  rooms:
+    - "!exampleWhatsAppPortalRoom:your-homeserver.tld"
+    - "!exampleFamilyRoom:your-homeserver.tld"
+  room_profiles:
+    "!exampleWhatsAppPortalRoom:your-homeserver.tld": default
+
+matrix:
+  homeserver_url: "https://matrix.org"
+  access_token: "syt_replace_me"
+  user_id: "@languagebridge:matrix.org"
+  encryption:
+    enabled: true
+    store_path: data/languagebridge-e2ee.db
+    pickle_key: "replace-with-long-random-secret"
+
+llm:
+  provider: anthropic
+  api_key: "sk-ant-replace-me"

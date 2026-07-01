@@ -10,6 +10,7 @@ venv/
 # Config with secrets
 config/config.yaml
 config/config-local.yaml
+config/config-synapse-local-secrets.yaml
 
 # SQLite database
 data/*.db
@@ -17,6 +18,11 @@ data/*.lock
 data/*.db-shm
 data/*.db-wal
 data/*.log
+
+# WhatsApp bridge state/config
+whatsapp-data/
+!whatsapp-data/
+!whatsapp-data/config.example.yaml
 
 # OS files
 .DS_Store

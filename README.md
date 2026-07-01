@@ -35,11 +35,15 @@ make run
 # Foreground local-like run with config/config-local.yaml and ./data bind mount
 make run-local
 
+# Start optional WhatsApp bridge service
+make docker-whatsapp-up
+
 # Run tests in Docker
 make test
 
 # View logs / stop
 make docker-logs
+make docker-whatsapp-logs
 make docker-down
 ```
 
@@ -102,6 +106,40 @@ LanguageBridge works with any messages that appear in your Matrix rooms. To brin
 | Google Chat | [mautrix-googlechat](https://docs.mau.fi/bridges/python/googlechat/index.html) |
 
 Each bridge runs as a separate service and creates Matrix rooms that mirror your chats. LanguageBridge then monitors those rooms for messages to translate.
+
+### WhatsApp bridge (mautrix-whatsapp) quickstart
+
+This repository now includes an optional `whatsapp` Docker Compose profile.
+
+For a full production runbook (Vultr + Synapse + HTTPS + users + appservice registration + QR login + LanguageBridge room policy), see:
+
+- [`docs/vultr-matrix-whatsapp-languagebridge.md`](docs/vultr-matrix-whatsapp-languagebridge.md)
+
+1. Start the bridge container:
+
+   ```bash
+   make docker-whatsapp-up
+   ```
+
+2. Follow bridge setup logs:
+
+   ```bash
+   make docker-whatsapp-logs
+   ```
+
+3. Complete the official mautrix-whatsapp appservice + QR-link flow:
+   - [mautrix-whatsapp docs](https://docs.mau.fi/bridges/go/whatsapp/index.html)
+4. Once linked, WhatsApp chats appear as Matrix rooms; add those room IDs to `family.rooms` or `family.room_profiles` in LanguageBridge config.
+5. Start from templates:
+   - `whatsapp-data/config.example.yaml` -> `whatsapp-data/config.yaml`
+   - `config/config-local-whatsapp.example.yaml` -> `config/config-local.yaml` (or another config path)
+
+Notes:
+- Bridge data persists under `./whatsapp-data` (gitignored).
+- You can stop only the bridge with:
+  ```bash
+  make docker-whatsapp-down
+  ```
 
 ## LLM Provider Setup
 

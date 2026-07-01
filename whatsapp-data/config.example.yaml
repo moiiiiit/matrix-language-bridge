@@ -1,0 +1,34 @@
+# mautrix-whatsapp example config (template only).
+# Copy to whatsapp-data/config.yaml and fill values per docs:
+# https://docs.mau.fi/bridges/go/whatsapp/index.html
+
+homeserver:
+  address: "https://matrix.example.com"
+  domain: "matrix.example.com"
+  software: "standard"
+
+appservice:
+  address: "http://whatsapp:29318"
+  hostname: "0.0.0.0"
+  port: 29318
+  id: "whatsapp"
+  bot:
+    username: "whatsappbot"
+    displayname: "WhatsApp Bridge"
+    avatar: "mxc://maunium.net/NeXNQarUbrlYBiPCpprYsRqr"
+  as_token: "replace_me_as_token"
+  hs_token: "replace_me_hs_token"
+
+bridge:
+  command_prefix: "!wa"
+  permissions:
+    "*": "relay"
+    "matrix.example.com": "user"
+    "@admin:matrix.example.com": "admin"
+
+database:
+  type: "sqlite3-fk-wal"
+  uri: "file:/data/mautrix-whatsapp.db?_txlock=immediate"
+
+logging:
+  min_level: "info"

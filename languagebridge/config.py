@@ -22,6 +22,8 @@ class FamilyConfig(BaseModel):
     name: str
     profile: str = "default"
     room_profiles: dict[str, str] = Field(default_factory=dict)
+    # Per-room trigger overrides; unlisted rooms use ``trigger_mode``.
+    room_trigger_modes: dict[str, Literal["auto", "reaction", "command"]] = Field(default_factory=dict)
     # Legacy fields kept for backward compatibility with old configs.
     dialect: str | None = None
     preserve_terms: list[str] = []
@@ -29,6 +31,9 @@ class FamilyConfig(BaseModel):
     reaction_trigger: str = "\U0001f310"
     command_prefix: str = "!translate"
     rooms: list[str] = ["*"]
+
+    def trigger_for_room(self, room_id: str) -> Literal["auto", "reaction", "command"]:
+        return self.room_trigger_modes.get(room_id, self.trigger_mode)
 
 
 class MatrixEncryptionConfig(BaseModel):

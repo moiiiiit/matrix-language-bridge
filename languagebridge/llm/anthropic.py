@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_MODEL = "claude-haiku-4-5-20251001"
 API_URL = "https://api.anthropic.com/v1/messages"
 MAX_RETRIES = 3
-TIMEOUT_SECONDS = 10
+TIMEOUT_SECONDS = 30
 
 
 class AnthropicProvider(TranslationProvider):
@@ -63,10 +63,11 @@ class AnthropicProvider(TranslationProvider):
                         )
             except (aiohttp.ClientError, asyncio.TimeoutError) as e:
                 logger.warning(
-                    "Anthropic request failed (attempt %d/%d): %s",
+                    "Anthropic request failed (attempt %d/%d): %s: %s",
                     attempt + 1,
                     MAX_RETRIES,
-                    e,
+                    type(e).__name__,
+                    e or "(no message)",
                 )
 
             if attempt < MAX_RETRIES - 1:

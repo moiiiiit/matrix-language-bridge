@@ -17,10 +17,6 @@ from languagebridge.storage import Storage
 logger = logging.getLogger(__name__)
 
 
-def _has_non_ascii(text: str) -> bool:
-    return bool(re.search(r"[^\x00-\x7F]", text))
-
-
 def _looks_like_charje_runes(text: str) -> bool:
     chars = [ch for ch in text if not ch.isspace()]
     if not chars:
@@ -159,13 +155,6 @@ def _should_skip(profile: Any, original_text: str, decision: MessageDecision) ->
         and decision.detection.confidence > 0.7
     ):
         return True
-    # Allow short messages for profiles that explicitly opted into preprocessing
-    # (e.g. rune -> phonetic -> translation can be meaningful even as one word).
-    if decision.preprocess_applied:
-        return False
-    word_count = len(decision.text_for_translation.split())
-    if word_count < 3 and not _has_non_ascii(decision.text_for_translation):
-        return True
     return False
 
 
@@ -228,7 +217,11 @@ async def _translate_preprocess_only(
         tone=context.tone,
         prompt_appendix=(
             f"{context.prompt_appendix}\n"
-            "Preprocessed input mode: translate this input directly and do not output [SKIP]."
+            "IMPORTANT — Preprocessed input mode: the text below has already been "
+            "converted from a non-Latin script into a phonetic/IPA representation. "
+            "It is NOT already in the target language. "
+            "Your job is to interpret the phonetics and output natural target-language text. "
+            "You MUST NOT return [SKIP] under any circumstances in this mode."
         ),
     )
     try:
@@ -237,7 +230,11 @@ async def _translate_preprocess_only(
         logger.exception("Translation provider error (preprocess mode)")
         return None
     if result.strip() == "[SKIP]":
-        return text_for_translation
+        # LLM still returned [SKIP] despite the instruction not to (e.g. it
+        # misread IPA as already-English).  Return None so the caller treats
+        # this as untranslatable and sends no reply — never surface the raw
+        # preprocessed (IPA) text to the user.
+        return None
     return result
 
 
@@ -327,13 +324,7 @@ async def handle_message(
         await storage.set_cached_translation(cache_key, result)
 
     # 10. Format reply
-    source_lang = (
-        decision.detection.language_code if decision.detection.language_code != "unknown" else "?"
-    )
-    tgt_label = (
-        decision.effective_target if profile.bidirectional_with else profile.reply_target_label
-    )
-    reply_text = f"\U0001f310 [{source_lang} \u2192 {tgt_label}] {result}"
+    reply_text = f"\U0001f310 {result}"
 
     # 11. Send reply
     try:
