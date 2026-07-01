@@ -217,7 +217,11 @@ async def _translate_preprocess_only(
         tone=context.tone,
         prompt_appendix=(
             f"{context.prompt_appendix}\n"
-            "Preprocessed input mode: translate this input directly and do not output [SKIP]."
+            "IMPORTANT — Preprocessed input mode: the text below has already been "
+            "converted from a non-Latin script into a phonetic/IPA representation. "
+            "It is NOT already in the target language. "
+            "Your job is to interpret the phonetics and output natural target-language text. "
+            "You MUST NOT return [SKIP] under any circumstances in this mode."
         ),
     )
     try:
@@ -226,7 +230,11 @@ async def _translate_preprocess_only(
         logger.exception("Translation provider error (preprocess mode)")
         return None
     if result.strip() == "[SKIP]":
-        return text_for_translation
+        # LLM still returned [SKIP] despite the instruction not to (e.g. it
+        # misread IPA as already-English).  Return None so the caller treats
+        # this as untranslatable and sends no reply — never surface the raw
+        # preprocessed (IPA) text to the user.
+        return None
     return result
 
 
